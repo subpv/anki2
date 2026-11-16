@@ -30,7 +30,7 @@ Also: per-course exam dates (no card is scheduled past the exam), cram mode, und
    - Who may log in is controlled by the application's bindings in Authentik. Each Authentik user gets their own courses and cards.
 2. **Dataset**: create a dataset for the app data, e.g. `tank/apps/mechdeck`.
 3. **App**: Apps → Discover Apps → ⋮ → *Install via YAML*, paste [`docker-compose.yml`](docker-compose.yml) and fill in the values marked `CHANGE`.
-4. Point your reverse proxy at port `8080`.
+4. Point your reverse proxy at port `8765`.
 
 The image is built by GitHub Actions and pushed to `ghcr.io/subpv/anki2` on every push to `main`.
 If the repository is private, either make the package public (GitHub → Packages → Package settings)
