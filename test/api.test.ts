@@ -169,7 +169,7 @@ test('image upload accepts images only', async () => {
 test('optimiser fits parameters from review history', async () => {
   assert.equal((await api('/api/fsrs/optimize', { method: 'POST' })).status, 400, 'refuses with too few reviews');
   // Simulate 300 cards reviewed over ~3 months.
-  const db = new Database(path.join(srv.dataDir, 'mechdeck.db'));
+  const db = new Database(path.join(srv.dataDir, 'card.db'));
   const card = (db.prepare('SELECT * FROM cards LIMIT 1').get()) as any;
   const insCard = db.prepare('INSERT INTO cards (note_id, user_id, course_id, ord, due) VALUES (?, ?, ?, ?, 0)');
   const insLog = db.prepare("INSERT INTO revlog (card_id, user_id, course_id, rating, state, review, prev) VALUES (?, ?, ?, ?, 2, ?, '{}')");

@@ -51,7 +51,7 @@ export function App() {
           <button className="icon-btn menu-toggle" onClick={() => setSide((s) => !s)} aria-label="Menu"><Menu size={18} /></button>
           <Link to="/" className="brand">
             <div className="brand-mark"><Layers size={18} /></div>
-            <span>MechDeck</span>
+            <span>Card</span>
           </Link>
           <form className="search" onSubmit={(e) => { e.preventDefault(); nav(`/browse?q=${encodeURIComponent(query)}`); }}>
             <Search size={17} />

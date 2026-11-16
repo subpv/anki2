@@ -1,4 +1,4 @@
-# MechDeck
+# Card
 
 Spaced-repetition flashcards built for engineering study rather than rote facts. It schedules reviews
 with FSRS (the algorithm current Anki uses), runs as one Docker container, and logs in through Authentik.
@@ -24,11 +24,11 @@ Also: per-course exam dates (no card is scheduled past the exam), cram mode, und
 ## Deploy on TrueNAS SCALE
 
 1. **Authentik**: create an *OAuth2/OpenID Provider* (confidential client) and an application for it.
-   - Redirect URI: `https://<your-app-url>/auth/callback`
+   - Redirect URI: `https://card.maidev.dk/auth/callback`
    - Scopes: `openid`, `profile`, `email`
    - Note the client ID, client secret and the *OpenID Configuration Issuer* URL.
    - Who may log in is controlled by the application's bindings in Authentik. Each Authentik user gets their own courses and cards.
-2. **Dataset**: create a dataset for the app data, e.g. `tank/apps/mechdeck`.
+2. **Dataset**: create a dataset for the app data, e.g. `tank/apps/card`.
 3. **App**: Apps → Discover Apps → ⋮ → *Install via YAML*, paste [`docker-compose.yml`](docker-compose.yml) and fill in the values marked `CHANGE`.
 4. Point your reverse proxy at port `8765`.
 
@@ -41,12 +41,12 @@ or add registry credentials in TrueNAS.
 | Variable | Meaning |
 |---|---|
 | `APP_URL` | Public URL of the app, no trailing slash. Used for the login redirect and secure cookies. |
-| `OIDC_ISSUER` | Authentik issuer URL, e.g. `https://auth.example.com/application/o/mechdeck/`. |
+| `OIDC_ISSUER` | Authentik issuer URL, e.g. `https://auth.example.com/application/o/card/`. |
 | `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | From the Authentik provider. |
 | `TZ` | Time zone. A study day ends at 04:00 local time. |
 | `DATA_DIR` | Where the SQLite database and images live (`/data` in the image). |
 
-**Backup**: everything is in the `/data` volume (`mechdeck.db` plus `media/`). Snapshot the dataset.
+**Backup**: everything is in the `/data` volume (`card.db` plus `media/`). Snapshot the dataset.
 
 ## Development
 

@@ -6,7 +6,7 @@ import path from 'node:path';
 export interface Server { url: string; dataDir: string; stop: () => void; proc: ChildProcess }
 
 export async function startServer(port: number, env: Record<string, string>): Promise<Server> {
-  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mechdeck-test-'));
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'card-test-'));
   const proc = spawn(process.execPath, ['--import', 'tsx', 'server/index.ts'], {
     env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, LOG_LEVEL: 'warn', ...env },
     stdio: ['ignore', 'inherit', 'inherit'],
