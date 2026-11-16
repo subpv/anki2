@@ -1,0 +1,21 @@
+# MechDeck on TrueNAS SCALE: Apps -> Discover Apps -> Install via YAML, paste this file.
+# Change the four values marked CHANGE and the dataset path under volumes.
+services:
+  mechdeck:
+    image: ghcr.io/subpv/anki2:latest
+    container_name: mechdeck
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Public URL of this app, as you open it in the browser (no trailing slash).
+      APP_URL: "https://cards.example.com" # CHANGE
+      # Authentik: Applications -> Providers -> your provider -> "OpenID Configuration Issuer".
+      OIDC_ISSUER: "https://auth.example.com/application/o/mechdeck/" # CHANGE
+      OIDC_CLIENT_ID: "CHANGE-ME" # CHANGE
+      OIDC_CLIENT_SECRET: "CHANGE-ME" # CHANGE
+      # Study days roll over at 04:00 in this time zone.
+      TZ: "Europe/Copenhagen"
+    volumes:
+      # A TrueNAS dataset for the database and uploaded images. Snapshot it for backups.
+      - /mnt/tank/apps/mechdeck:/data # CHANGE to your dataset
