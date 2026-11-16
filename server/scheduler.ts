@@ -1,4 +1,4 @@
-import { fsrs, generatorParameters, State, type Card, type Grade, type FSRS, type StepUnit } from 'ts-fsrs';
+import { default_w, forgetting_curve, fsrs, generatorParameters, State, type Card, type Grade, type FSRS, type StepUnit } from 'ts-fsrs';
 import type { Settings } from '../shared/types.ts';
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -6,6 +6,8 @@ export const DEFAULT_SETTINGS: Settings = {
   maxInterval: 36500,
   learningSteps: '1m 10m',
   relearningSteps: '10m',
+  dailyGoal: 20,
+  answerSeconds: 30,
 };
 
 const DAY = 86_400_000;
@@ -106,4 +108,11 @@ export function previewIntervals(f: FSRS, row: CardRow, examDate: string | null,
     out[g] = humanInterval(schedule(f, row, g as Grade, examDate, now).due - now);
   }
   return out;
+}
+
+/** Chance (0..1) of recalling this card right now, from the FSRS forgetting curve. */
+export function retrievability(row: Pick<CardRow, 'state' | 'stability' | 'last_review'>, w: number[] | null, now = Date.now()): number {
+  if (row.state === 0 || !row.last_review || row.stability <= 0) return 0;
+  const elapsed = Math.max(0, (now - row.last_review) / DAY);
+  return forgetting_curve(w?.length ? w : default_w, elapsed, row.stability);
 }

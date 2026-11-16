@@ -21,6 +21,10 @@ All text fields take Markdown and LaTeX (`$inline$`, `$$display$$`). Images can 
 Also: per-course exam dates (no card is scheduled past the exam), cram mode, undo, stats,
 `.apkg` import from Anki, and fitting the FSRS parameters to your own review history.
 
+To keep you coming back: a daily goal ring and streak on Home, a year heatmap of study days,
+a "known %" estimate per course, 5-minute sessions that stop after 15 cards, reviews interleaved
+across card types and courses, and an answer timer bar that shows the answer when it runs out.
+
 ## Deploy on TrueNAS SCALE
 
 1. **Authentik**: create an *OAuth2/OpenID Provider* (confidential client) and an application for it.

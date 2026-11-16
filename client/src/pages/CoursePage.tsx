@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Pencil, Play, Plus, Zap } from 'lucide-react';
+import { Pencil, Play, Plus, Timer, Zap } from 'lucide-react';
 import type { Course, Note } from '../../../shared/types.ts';
-import { api, ApiError } from '../api.ts';
+import { api, ApiError, daysUntil } from '../api.ts';
+import { Known } from '../components/Progress.tsx';
 import { CourseDot, useApp } from '../App.tsx';
 import { Counts, ExamChip, NoteRow } from './Home.tsx';
 
@@ -100,11 +101,15 @@ export function CoursePage() {
           <button className="btn ghost" onClick={() => setEdit(true)}><Pencil size={16} /> Settings</button>
           <Link to={`/new?course=${course.id}`} className="btn"><Plus size={18} /> Add card</Link>
           {c.total > 0 && <Link to={`/cram/${course.id}`} className="btn" title="Go through every card without changing the schedule"><Zap size={16} /> Cram</Link>}
+          {todo > 0 && <Link to={`/review/${course.id}?quick=1`} className="btn" title="About 15 cards, then stop"><Timer size={16} /> 5 min</Link>}
           {todo > 0 && <Link to={`/review/${course.id}`} className="btn primary"><Play size={17} /> Study {todo}</Link>}
         </div>
       </div>
 
-      <div className="panel pad" style={{ marginTop: 20 }}><Counts c={c} /></div>
+      <div className="panel pad" style={{ marginTop: 20 }}>
+        <Counts c={c} />
+        {c.total > 0 && <Known value={course.known ?? 0} exam={!!course.examDate && daysUntil(course.examDate) >= 0} />}
+      </div>
 
       <h2>Cards</h2>
       {notes && notes.length === 0 && (

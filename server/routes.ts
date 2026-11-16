@@ -6,7 +6,7 @@ import type { Grade } from 'ts-fsrs';
 import { db, MEDIA_DIR } from './db.ts';
 import { requireUser, type User } from './auth.ts';
 import {
-  DEFAULT_SETTINGS, dayEnd, dayStart, makeScheduler, previewIntervals, schedule, type CardRow,
+  DEFAULT_SETTINGS, dayEnd, dayStart, makeScheduler, previewIntervals, retrievability, schedule, type CardRow,
 } from './scheduler.ts';
 import { createNote, rowToNote, updateNote, validateNote, type NoteInput } from './notes.ts';
 import { importApkg } from './apkg.ts';
@@ -57,24 +57,97 @@ function courseCounts(userId: number, c: CourseRow, now: number) {
   };
 }
 
+type Candidate = CardRow & { type: string };
+
+/**
+ * Pick the next card. Learning steps that are due come first; otherwise due reviews and new
+ * cards are interleaved, steering away from the note, card type and course just seen so a
+ * session does not turn into a run of look-alike cards.
+ */
 function nextCard(userId: number, courses: CourseRow[], now: number): CardRow | null {
   if (!courses.length) return null;
   const ids = courses.map((c) => c.id).join(',');
-  const base = `SELECT * FROM cards WHERE user_id = ? AND suspended = 0 AND course_id IN (${ids})`;
-  const learning = db.prepare(`${base} AND state IN (1, 3) AND due <= ? ORDER BY due LIMIT 1`).get(userId, now);
-  if (learning) return learning as CardRow;
-  const review = db.prepare(`${base} AND state = 2 AND due <= ? ORDER BY due LIMIT 1`).get(userId, dayEnd(now));
-  if (review) return review as CardRow;
+  const base = `SELECT c.*, n.type FROM cards c JOIN notes n ON n.id = c.note_id
+                WHERE c.user_id = ? AND c.suspended = 0 AND c.course_id IN (${ids})`;
+  const last = db
+    .prepare(
+      `SELECT c.note_id, c.course_id, n.type FROM revlog r JOIN cards c ON c.id = r.card_id JOIN notes n ON n.id = c.note_id
+       WHERE r.user_id = ? AND r.review >= ? ORDER BY r.review DESC, r.id DESC LIMIT 1`,
+    )
+    .get(userId, dayStart(now)) as { note_id: number; course_id: number; type: string } | undefined;
+
+  const pick = (pool: Candidate[], jitter: number): Candidate | null => {
+    let best: Candidate | null = null;
+    let bestScore = Infinity;
+    pool.forEach((c, i) => {
+      let score = i * 0.1 + Math.random() * jitter; // earlier in the pool = more overdue
+      if (last) {
+        if (c.note_id === last.note_id) score += 100;
+        if (c.type === last.type) score += 10;
+        if (courses.length > 1 && c.course_id === last.course_id) score += 3;
+      }
+      if (score < bestScore) { best = c; bestScore = score; }
+    });
+    return best;
+  };
+
+  const learning = db.prepare(`${base} AND c.state IN (1, 3) AND c.due <= ? ORDER BY c.due LIMIT 5`).all(userId, now) as Candidate[];
+  if (learning.length) return pick(learning, 0);
+
+  const reviews = db.prepare(`${base} AND c.state = 2 AND c.due <= ? ORDER BY c.due LIMIT 60`).all(userId, dayEnd(now)) as Candidate[];
+  // New cards are introduced in order within a course: one candidate per course, skipping siblings of the last note.
+  const fresh: Candidate[] = [];
+  let newLeft = 0;
   for (const c of courses) {
-    if (newRemaining(userId, c, now) <= 0) continue;
-    const fresh = db
-      .prepare('SELECT * FROM cards WHERE user_id = ? AND suspended = 0 AND course_id = ? AND state = 0 ORDER BY note_id, id LIMIT 1')
-      .get(userId, c.id);
-    if (fresh) return fresh as CardRow;
+    const remaining = newRemaining(userId, c, now);
+    if (remaining <= 0) continue;
+    const rows = db
+      .prepare(
+        `SELECT c.*, n.type FROM cards c JOIN notes n ON n.id = c.note_id
+         WHERE c.user_id = ? AND c.suspended = 0 AND c.course_id = ? AND c.state = 0 ORDER BY c.note_id, c.id LIMIT 8`,
+      )
+      .all(userId, c.id) as Candidate[];
+    if (!rows.length) continue;
+    fresh.push(rows.find((r) => r.note_id !== last?.note_id) ?? rows[0]);
+    newLeft += Math.min(remaining, rows.length);
   }
+  if (reviews.length && fresh.length) {
+    // Spread the new cards through the reviews instead of leaving them all for the end.
+    return Math.random() < newLeft / (newLeft + reviews.length) ? pick(fresh, 2) : pick(reviews, 2);
+  }
+  if (reviews.length) return pick(reviews, 2);
+  if (fresh.length) return pick(fresh, 0);
+
   // Nothing else left: bring forward learning steps that are due later today.
-  const ahead = db.prepare(`${base} AND state IN (1, 3) AND due <= ? ORDER BY due LIMIT 1`).get(userId, dayEnd(now));
-  return (ahead as CardRow) ?? null;
+  const ahead = db.prepare(`${base} AND c.state IN (1, 3) AND c.due <= ? ORDER BY c.due LIMIT 5`).all(userId, dayEnd(now)) as Candidate[];
+  return pick(ahead, 0);
+}
+
+/** Consecutive study days ending today (or yesterday, if today is still open). */
+function studyStreak(userId: number, courseFilter: string, now: number): number {
+  const start = dayStart(now);
+  const days = new Set(
+    (db.prepare(`SELECT DISTINCT review FROM revlog WHERE user_id = ? ${courseFilter}`).all(userId) as { review: number }[])
+      .map((r) => dayStart(r.review)),
+  );
+  let streak = 0;
+  for (let d = days.has(start) ? start : start - DAY; days.has(dayStart(d + DAY / 2)); d = dayStart(d - DAY / 2)) streak++;
+  return streak;
+}
+
+/** Reviews per study day for the last `n` days, oldest first. */
+function reviewsPerDay(userId: number, courseFilter: string, n: number, now: number) {
+  const start = dayStart(now);
+  const out = Array.from({ length: n }, (_, i) => ({ day: dayStart(start - (n - 1 - i) * DAY + DAY / 2), count: 0 }));
+  const index = new Map(out.map((d, i) => [d.day, i]));
+  const logs = db
+    .prepare(`SELECT review FROM revlog WHERE user_id = ? AND review >= ? ${courseFilter}`)
+    .all(userId, out[0].day) as { review: number }[];
+  for (const l of logs) {
+    const i = index.get(dayStart(l.review));
+    if (i !== undefined) out[i].count++;
+  }
+  return out;
 }
 
 export function registerRoutes(app: FastifyInstance) {
@@ -92,7 +165,14 @@ export function registerRoutes(app: FastifyInstance) {
   // ---- Courses -------------------------------------------------------------
   app.get('/api/courses', async (req) => {
     const now = Date.now();
-    return userCourses(req.user.id).map((c) => ({ ...courseOut(c), counts: courseCounts(req.user.id, c, now) }));
+    const w = req.user.fsrs_params ? (JSON.parse(req.user.fsrs_params) as number[]) : null;
+    return userCourses(req.user.id).map((c) => {
+      const cards = db
+        .prepare('SELECT state, stability, last_review FROM cards WHERE user_id = ? AND course_id = ? AND suspended = 0')
+        .all(req.user.id, c.id) as Pick<CardRow, 'state' | 'stability' | 'last_review'>[];
+      const known = cards.length ? cards.reduce((sum, r) => sum + retrievability(r, w, now), 0) / cards.length : 0;
+      return { ...courseOut(c), counts: courseCounts(req.user.id, c, now), known };
+    });
   });
 
   const courseBody = (b: any) => ({
@@ -277,6 +357,19 @@ export function registerRoutes(app: FastifyInstance) {
   });
 
   // ---- Stats ---------------------------------------------------------------
+  app.get('/api/summary', async (req) => {
+    const now = Date.now();
+    const settings = settingsOf(req.user);
+    const year = reviewsPerDay(req.user.id, '', 53 * 7, now);
+    return {
+      today: year[year.length - 1].count,
+      goal: settings.dailyGoal,
+      streak: studyStreak(req.user.id, '', now),
+      answerSeconds: settings.answerSeconds,
+      year,
+    };
+  });
+
   app.get('/api/stats', async (req) => {
     const u = req.user.id;
     const courseId = Number((req.query as any).course) || null;
@@ -315,18 +408,12 @@ export function registerRoutes(app: FastifyInstance) {
       .all(u, start + DAYS * DAY) as { due: number }[];
     for (const d of dues) forecast[Math.max(0, Math.floor((d.due - start) / DAY))].count++;
 
-    // Streak: consecutive study days ending today (or yesterday, if today is still open).
-    const days = new Set(
-      (db.prepare(`SELECT DISTINCT review FROM revlog WHERE user_id = ? ${cf}`).all(u) as { review: number }[])
-        .map((r) => dayStart(r.review)),
-    );
-    let streak = 0;
-    for (let d = days.has(start) ? start : start - DAY; days.has(dayStart(d + DAY / 2)); d = dayStart(d - DAY / 2)) streak++;
-
+    const streak = studyStreak(u, cf, now);
     const total = (db.prepare(`SELECT COUNT(*) AS n FROM revlog WHERE user_id = ? ${cf}`).get(u) as { n: number }).n;
     return {
       states: Object.fromEntries(Object.entries(states).map(([k, v]) => [k, v ?? 0])),
       reviews, forecast, streak, totalReviews: total,
+      year: reviewsPerDay(u, cf, 53 * 7, now),
       today: reviews[DAYS - 1].count,
       retention: matureTotal ? maturePassed / matureTotal : null,
       retentionSample: matureTotal,
@@ -346,7 +433,11 @@ export function registerRoutes(app: FastifyInstance) {
       maxInterval: Math.round(Number(b.maxInterval)),
       learningSteps: String(b.learningSteps ?? '').trim(),
       relearningSteps: String(b.relearningSteps ?? '').trim(),
+      dailyGoal: Math.round(Number(b.dailyGoal ?? DEFAULT_SETTINGS.dailyGoal)),
+      answerSeconds: Math.round(Number(b.answerSeconds ?? DEFAULT_SETTINGS.answerSeconds)),
     };
+    if (!(s.dailyGoal >= 1 && s.dailyGoal <= 9999)) return reply.code(400).send({ error: 'Daily goal must be at least 1 card' });
+    if (!(s.answerSeconds >= 0 && s.answerSeconds <= 3600)) return reply.code(400).send({ error: 'Answer timer must be between 0 and 3600 seconds' });
     if (!(s.retention >= 0.7 && s.retention <= 0.97)) return reply.code(400).send({ error: 'Desired retention must be between 70 % and 97 %' });
     if (!(s.maxInterval >= 1)) return reply.code(400).send({ error: 'Maximum interval must be at least 1 day' });
     const stepRe = /^(\d+(\.\d+)?[mhd](\s+|$))*$/;
