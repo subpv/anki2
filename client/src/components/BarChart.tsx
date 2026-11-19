@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { locale, t } from '../i18n.ts';
 
 export interface Bar { day: number; count: number; note?: string }
 
-const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
 
 function niceMax(v: number): number {
   if (v <= 4) return 4;
@@ -54,9 +55,9 @@ export function BarChart({ data, unit, label }: { data: Bar[]; unit: string; lab
         </div>
       )}
       <details>
-        <summary>Show as table</summary>
+        <summary>{t('Show as table')}</summary>
         <table className="data">
-          <thead><tr><th>Day</th><th>{unit}</th></tr></thead>
+          <thead><tr><th>{t('Day')}</th><th>{unit}</th></tr></thead>
           <tbody>{data.map((d) => <tr key={d.day}><td>{fmtDay(d.day)}</td><td>{d.count}</td></tr>)}</tbody>
         </table>
       </details>

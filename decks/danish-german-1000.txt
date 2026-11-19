@@ -1,5 +1,7 @@
 # title: Danish → German: the 1000 most important words
 # description: The most frequent Danish words plus everyday essentials (numbers, food, home, body, animals), in order of importance. Nouns come with en/et and the German article; notes give plurals, verb forms and usage. Common words have a picture with a hint button.
+# title_de: Dänisch → Deutsch: die 1000 wichtigsten Wörter
+# description_de: Die häufigsten dänischen Wörter plus Alltagswortschatz (Zahlen, Essen, Wohnen, Körper, Tiere), nach Wichtigkeit sortiert. Substantive mit en/et und deutschem Artikel; Notizen mit Plural, Verbformen und Gebrauch. Häufige Wörter haben ein Bild mit Hinweis-Knopf.
 # course: Danish
 #
 # Word order is based on the lemma frequency list of Det Danske Sprog- og Litteraturselskab

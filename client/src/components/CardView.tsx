@@ -4,6 +4,7 @@ import { Check, Lightbulb, Link2, TriangleAlert, X } from 'lucide-react';
 import type { Note, ParamData, OcclusionData, FormulaData, NumericData, VocabData } from '../../../shared/types.ts';
 import { checkAnswer, fmtNum, type Verdict } from '../../../shared/units.ts';
 import { clozeSource, highlight, renderMd, renderTex } from '../md.ts';
+import { t, tn } from '../i18n.ts';
 
 export const Md = ({ src, className = '' }: { src: string; className?: string }) => (
   <div className={`md ${className}`} dangerouslySetInnerHTML={{ __html: renderMd(src ?? '') }} />
@@ -51,12 +52,12 @@ export function evalFormula(formula: string, scope: Record<string, number>): num
 }
 
 function VerdictBox({ v, unit }: { v: Verdict; unit: string }) {
-  const given = v.given !== undefined ? ` You answered ${fmtNum(v.given, 6)}${v.kind === 'missing-unit' || !unit ? '' : ` ${unit}`}.` : '';
-  if (v.ok) return <div className="verdict ok"><Check size={18} /> Correct <span>{given}</span></div>;
-  if (v.kind === 'missing-unit') return <div className="verdict meh"><TriangleAlert size={18} /> Right number, unit missing</div>;
-  if (v.kind === 'unit') return <div className="verdict no"><X size={18} /> Wrong unit <span>expected {unit || 'no unit'}</span></div>;
-  if (v.kind === 'invalid') return <div className="verdict no"><X size={18} /> Not a number</div>;
-  return <div className="verdict no"><X size={18} /> Not quite <span>{given}</span></div>;
+  const given = v.given !== undefined ? ` ${t('You answered {x}.', { x: `${fmtNum(v.given, 6)}${v.kind === 'missing-unit' || !unit ? '' : ` ${unit}`}` })}` : '';
+  if (v.ok) return <div className="verdict ok"><Check size={18} /> {t('Correct')} <span>{given}</span></div>;
+  if (v.kind === 'missing-unit') return <div className="verdict meh"><TriangleAlert size={18} /> {t('Right number, unit missing')}</div>;
+  if (v.kind === 'unit') return <div className="verdict no"><X size={18} /> {t('Wrong unit')} <span>{t('expected {u}', { u: unit || t('no unit') })}</span></div>;
+  if (v.kind === 'invalid') return <div className="verdict no"><X size={18} /> {t('Not a number')}</div>;
+  return <div className="verdict no"><X size={18} /> {t('Not quite')} <span>{given}</span></div>;
 }
 
 function NumericCard({ question, expected, unit, tolerance, explanation, revealed, onReveal, onSuggest, interactive }: {
@@ -79,7 +80,7 @@ function NumericCard({ question, expected, unit, tolerance, explanation, reveale
       {!revealed && (
         <form className="answer-row" onSubmit={(e) => { e.preventDefault(); onReveal?.(); }}>
           <input ref={ref} type="text" value={input} onChange={(e) => setInput(e.target.value)}
-            placeholder={unit ? `Answer in ${unit}` : 'Answer'} autoComplete="off" aria-label="Your answer" />
+            placeholder={unit ? t('Answer in {u}', { u: unit }) : t('Answer')} autoComplete="off" aria-label={t('Your answer')} />
         </form>
       )}
       {revealed && (
@@ -87,7 +88,7 @@ function NumericCard({ question, expected, unit, tolerance, explanation, reveale
           <hr className="card-sep" />
           {verdict && <VerdictBox v={verdict} unit={unit} />}
           {expected === null
-            ? <div className="verdict no"><X size={18} /> The formula could not be evaluated</div>
+            ? <div className="verdict no"><X size={18} /> {t('The formula could not be evaluated')}</div>
             : <div className="big-answer">{fmtNum(expected)} {unit} <span className="muted" style={{ fontSize: 14, fontWeight: 500 }}>±{tolerance} %</span></div>}
           {explanation && <Md src={explanation} className="card-face" />}
         </>
@@ -111,7 +112,7 @@ function Vocab({ d, ord, revealed, hint, onHint }: { d: VocabData; ord: string; 
   if (ord === 'w') {
     return (
       <div className="vocab">
-        <div className="card-kicker">What does it mean?</div>
+        <div className="card-kicker">{t('What does it mean?')}</div>
         <div className="vocab-word">{d.word}</div>
         {revealed && (
           <>
@@ -126,12 +127,12 @@ function Vocab({ d, ord, revealed, hint, onHint }: { d: VocabData; ord: string; 
   }
   return (
     <div className="vocab">
-      <div className="card-kicker">{pic ? 'What is this called?' : 'How do you say it?'}</div>
+      <div className="card-kicker">{pic ? t('What is this called?') : t('How do you say it?')}</div>
       {pic ? <Picture src={pic} /> : <div className="vocab-word">{d.meaning}</div>}
       {pic && !revealed && (
         hint
           ? <div className="vocab-hint">{d.meaning}</div>
-          : <button type="button" className="btn small hint-btn" onClick={onHint}><Lightbulb size={15} /> Hint <kbd>H</kbd></button>
+          : <button type="button" className="btn small hint-btn" onClick={onHint}><Lightbulb size={15} /> {t('Hint')} <kbd>H</kbd></button>
       )}
       {revealed && (
         <>
@@ -162,7 +163,7 @@ function Occlusion({ data, ord, revealed }: { data: OcclusionData; ord: string; 
       {revealed && (
         <>
           <hr className="card-sep" />
-          <div className="big-answer">{data.rects.find((r) => r.id === target)?.label || '(no label)'}</div>
+          <div className="big-answer">{data.rects.find((r) => r.id === target)?.label || t('(no label)')}</div>
         </>
       )}
     </>
@@ -228,7 +229,7 @@ export const CardView = forwardRef<CardHandle, Props>(function CardView(
         if (ord === 'recall') {
           return (
             <>
-              <div className="card-kicker">Write down the formula</div>
+              <div className="card-kicker">{t('Write down the formula')}</div>
               <Md src={f.name} className="card-face" />
               {revealed && <><hr className="card-sep" /><Tex src={f.latex} />{f.notes && <Md src={f.notes} />}</>}
             </>
@@ -237,7 +238,7 @@ export const CardView = forwardRef<CardHandle, Props>(function CardView(
         if (ord === 'symbols') {
           return (
             <>
-              <div className="card-kicker">Name every symbol and its unit</div>
+              <div className="card-kicker">{t('Name every symbol and its unit')}</div>
               <Md src={f.name} className="card-face" />
               <Tex src={f.latex} />
               {revealed && (
@@ -256,7 +257,7 @@ export const CardView = forwardRef<CardHandle, Props>(function CardView(
         const r = f.rearrangements.find((x) => `r:${x.id}` === ord);
         return (
           <>
-            <div className="card-kicker">Rearrange — solve for <Tex src={r?.solveFor ?? ''} display={false} /></div>
+            <div className="card-kicker">{t('Rearrange — solve for')} <Tex src={r?.solveFor ?? ''} display={false} /></div>
             <Md src={f.name} className="card-face" />
             <Tex src={f.latex} />
             {revealed && <><hr className="card-sep" /><Tex src={r?.latex ?? ''} /></>}
@@ -281,11 +282,11 @@ export const CardView = forwardRef<CardHandle, Props>(function CardView(
         const shown = revealed ? steps.length : Math.min(step, steps.length);
         return (
           <>
-            <div className="card-kicker">Derivation — recall the next step before revealing it</div>
+            <div className="card-kicker">{t('Derivation — recall the next step before revealing it')}</div>
             <Md src={d.title} className="card-face" />
             <ol className="steps" style={{ marginTop: 14 }}>
               {steps.slice(0, shown).map((s, i) => <li key={i}><Md src={s} /></li>)}
-              {shown < steps.length && <li className="hidden">{steps.length - shown} more step{steps.length - shown > 1 ? 's' : ''}…</li>}
+              {shown < steps.length && <li className="hidden">{tn(steps.length - shown, '{n} more step…', '{n} more steps…')}</li>}
             </ol>
           </>
         );
