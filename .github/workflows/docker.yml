@@ -66,3 +66,23 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  # Copy the code to the Gitea repository (git.maidev.dk/<owner>/card) on every push to main.
+  # Uses the same GITEA_USER variable and GITEA_TOKEN secret; the token also needs
+  # repository: Read and Write. GitHub stays the source: Gitea's main is overwritten.
+  mirror:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GITEA_USER != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - env:
+          GITEA_USER: ${{ vars.GITEA_USER }}
+          GITEA_OWNER: ${{ vars.GITEA_OWNER }}
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        run: |
+          owner="${GITEA_OWNER:-$GITEA_USER}"
+          git push --force "https://${GITEA_USER}:${GITEA_TOKEN}@git.maidev.dk/${owner}/card.git" HEAD:refs/heads/main
+          git push --force --tags "https://${GITEA_USER}:${GITEA_TOKEN}@git.maidev.dk/${owner}/card.git"
