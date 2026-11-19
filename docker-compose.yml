@@ -1,8 +1,9 @@
 # Card on TrueNAS SCALE: Apps -> Discover Apps -> Install via YAML, paste this file.
-# Change the three values marked CHANGE and the dataset path under volumes.
+# Fill in the two values marked CHANGE.
 services:
   card:
-    image: ghcr.io/subpv/anki2:latest
+    # Built on GitHub and copied to Gitea on every push to main.
+    image: git.maidev.dk/marlo/card:latest
     container_name: card
     restart: unless-stopped
     ports:
@@ -12,11 +13,11 @@ services:
       # Public URL of this app, as you open it in the browser (no trailing slash).
       APP_URL: "https://card.maidev.dk"
       # Authentik: Applications -> Providers -> your provider -> "OpenID Configuration Issuer".
-      OIDC_ISSUER: "https://auth.example.com/application/o/card/" # CHANGE
+      OIDC_ISSUER: "https://auth.maidev.dk/application/o/card/"
       OIDC_CLIENT_ID: "CHANGE-ME" # CHANGE
       OIDC_CLIENT_SECRET: "CHANGE-ME" # CHANGE
       # Study days roll over at 04:00 in this time zone.
       TZ: "Europe/Copenhagen"
     volumes:
       # A TrueNAS dataset for the database and uploaded images. Snapshot it for backups.
-      - /mnt/tank/apps/card:/data # CHANGE to your dataset
+      - /mnt/wesn580-03-26/storage-share/card:/data

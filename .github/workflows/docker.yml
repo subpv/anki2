@@ -5,6 +5,7 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -34,10 +35,27 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      # Copy to the Gitea registry too, when the repository variable GITEA_USER and the
+      # secret GITEA_TOKEN (Gitea token with write:package) are set. Optional GITEA_OWNER
+      # pushes to an organisation instead of the user.
+      - id: gitea
+        if: vars.GITEA_USER != ''
+        env:
+          GITEA_USER: ${{ vars.GITEA_USER }}
+          GITEA_OWNER: ${{ vars.GITEA_OWNER }}
+        run: echo "image=git.maidev.dk/$(echo "${GITEA_OWNER:-$GITEA_USER}" | tr '[:upper:]' '[:lower:]')/card" >> "$GITHUB_OUTPUT"
+      - if: steps.gitea.outputs.image != ''
+        uses: docker/login-action@v3
+        with:
+          registry: git.maidev.dk
+          username: ${{ vars.GITEA_USER }}
+          password: ${{ secrets.GITEA_TOKEN }}
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: |
+            ghcr.io/${{ github.repository }}
+            ${{ steps.gitea.outputs.image }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
