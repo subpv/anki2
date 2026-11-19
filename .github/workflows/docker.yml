@@ -35,20 +35,25 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # Copy to the Gitea registry too, when the repository variable GITEA_USER and the
-      # secret GITEA_TOKEN (Gitea token with write:package) are set. Optional GITEA_OWNER
-      # pushes to an organisation instead of the user.
+      # Copy to the Gitea registry too, when GITEA_USER (repository variable or secret) and
+      # the secret GITEA_TOKEN (Gitea token with package + repository read/write) are set.
+      # Optional GITEA_OWNER pushes to an organisation instead of the user.
       - id: gitea
-        if: vars.GITEA_USER != ''
         env:
-          GITEA_USER: ${{ vars.GITEA_USER }}
-          GITEA_OWNER: ${{ vars.GITEA_OWNER }}
-        run: echo "image=git.maidev.dk/$(echo "${GITEA_OWNER:-$GITEA_USER}" | tr '[:upper:]' '[:lower:]')/card" >> "$GITHUB_OUTPUT"
+          GITEA_USER: ${{ vars.GITEA_USER || secrets.GITEA_USER }}
+          GITEA_OWNER: ${{ vars.GITEA_OWNER || secrets.GITEA_OWNER }}
+          HAS_TOKEN: ${{ secrets.GITEA_TOKEN != '' }}
+        run: |
+          if [ -z "$GITEA_USER" ] || [ "$HAS_TOKEN" != "true" ]; then
+            echo "::notice::Not copying to Gitea: GITEA_USER is ${GITEA_USER:+set}${GITEA_USER:-missing}, GITEA_TOKEN is $([ "$HAS_TOKEN" = true ] && echo set || echo missing)."
+            exit 0
+          fi
+          echo "image=git.maidev.dk/$(echo "${GITEA_OWNER:-$GITEA_USER}" | tr '[:upper:]' '[:lower:]')/card" >> "$GITHUB_OUTPUT"
       - if: steps.gitea.outputs.image != ''
         uses: docker/login-action@v3
         with:
           registry: git.maidev.dk
-          username: ${{ vars.GITEA_USER }}
+          username: ${{ vars.GITEA_USER || secrets.GITEA_USER }}
           password: ${{ secrets.GITEA_TOKEN }}
       - id: meta
         uses: docker/metadata-action@v5
@@ -72,17 +77,21 @@ jobs:
   # repository: Read and Write. GitHub stays the source: Gitea's main is overwritten.
   mirror:
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GITEA_USER != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - env:
-          GITEA_USER: ${{ vars.GITEA_USER }}
-          GITEA_OWNER: ${{ vars.GITEA_OWNER }}
+          GITEA_USER: ${{ vars.GITEA_USER || secrets.GITEA_USER }}
+          GITEA_OWNER: ${{ vars.GITEA_OWNER || secrets.GITEA_OWNER }}
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
         run: |
+          if [ -z "$GITEA_USER" ] || [ -z "$GITEA_TOKEN" ]; then
+            echo "::notice::Not copying to Gitea: set GITEA_USER and the GITEA_TOKEN secret."
+            exit 0
+          fi
           owner="${GITEA_OWNER:-$GITEA_USER}"
           git push --force "https://${GITEA_USER}:${GITEA_TOKEN}@git.maidev.dk/${owner}/card.git" HEAD:refs/heads/main
           git push --force --tags "https://${GITEA_USER}:${GITEA_TOKEN}@git.maidev.dk/${owner}/card.git"
