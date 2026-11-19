@@ -81,15 +81,7 @@ function Shell() {
   const reloadMe = useCallback(async () => {
     const m = await api<Me>('/api/me');
     setMe(m);
-    let chosen = false;
-    try { chosen = localStorage.getItem('langChosen') === '1'; localStorage.removeItem('langChosen'); } catch { /* private mode */ }
-    if (chosen && m.language !== lang) {
-      // Picked on the login page: save it to the account.
-      await api('/api/me/language', { method: 'PUT', body: { language: lang } });
-      setMe({ ...m, language: lang });
-    } else if (m.language !== lang) {
-      setLang(m.language); // follow the account's language on every device
-    }
+    if (m.language !== lang) setLang(m.language); // follow the account's language on every device
   }, []);
   useEffect(() => { refresh(); reloadMe(); }, [refresh, reloadMe]);
   useEffect(() => { setSide(false); setMenu(false); refresh(); }, [loc.pathname, refresh]);

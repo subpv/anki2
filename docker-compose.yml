@@ -20,6 +20,8 @@ services:
       TZ: "Europe/Copenhagen"
       # Feedback form behind the Feedback button (like write). Leave empty to hide the button.
       FEEDBACK_URL: "https://feedback.maidev.dk/"
+      # Creating accounts on the login page: open (default) or off. Optional invitation code:
+      # SIGNUP_CODE: "something-only-friends-know"
     volumes:
       # A TrueNAS dataset for the database and uploaded images. Snapshot it for backups.
       - /mnt/wesn580-03-26/storage-share/card:/data
