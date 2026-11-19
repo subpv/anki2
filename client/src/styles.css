@@ -507,3 +507,6 @@ input[type='password'] { width: 100%; background: var(--bg); border: 1px solid v
   .side-extra { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 10px; }
   .side-extra .version { display: inline-block; margin: 8px 14px; }
 }
+.login-switch { text-align: center; margin: 18px 0 0; color: var(--text-2); font-size: 14px; }
+.linklike { background: none; border: 0; padding: 0; color: var(--accent-text); font-weight: 600; cursor: pointer; }
+.linklike:hover { text-decoration: underline; }

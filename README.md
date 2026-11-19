@@ -34,11 +34,13 @@ across card types and courses, and an answer timer bar that shows the answer whe
 - **Username and password**: after logging in with Authentik once, set them under *Settings → Login
   without Authentik*. Passwords are stored as scrypt hashes; after 10 failed attempts within 15 minutes
   per username or address, logins are refused for a while.
-- **Without Authentik configured** (no `OIDC_ISSUER`), the first visit offers to create the first
-  account; after that, setup is closed.
+- **Create account**: the login page lets anyone register with username and password. Each account only
+  sees its own cards. At most 5 new accounts per address and hour. Set `SIGNUP_CODE` to require an
+  invitation code, or `SIGNUP=off` to turn registration off (without Authentik, the very first account
+  can still be created).
 
-The language (Deutsch/English) can be picked on the login page, in the account menu or in Settings,
-and is stored per account.
+The language (Deutsch/English) is chosen when creating an account and can be changed in the account
+menu or in Settings.
 
 ## Wiki and AI import
 
@@ -99,6 +101,8 @@ server in once with `sudo docker login git.maidev.dk` (a token with package: Rea
 | `OIDC_ISSUER` | Authentik issuer URL, e.g. `https://auth.example.com/application/o/card/`. Optional: without it, only password login. |
 | `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | From the Authentik provider. |
 | `FEEDBACK_URL` | Feedback form opened by the *Feedback* button (default `https://feedback.maidev.dk/`; empty hides the button). |
+| `SIGNUP` | `open` (default) or `off`: whether new accounts can be created on the login page. |
+| `SIGNUP_CODE` | Optional invitation code needed to create an account. |
 | `TZ` | Time zone. A study day ends at 04:00 local time. |
 | `DATA_DIR` | Where the SQLite database and images live (`/data` in the image). |
 

@@ -11,6 +11,9 @@ export const APP_URL = (process.env.APP_URL || 'http://localhost:8080').replace(
 const APP_ORIGIN = new URL(APP_URL).origin;
 const SECURE = APP_URL.startsWith('https://');
 const OIDC_ENABLED = !!(ISSUER && CLIENT_ID);
+/** Self-registration: on unless SIGNUP=off. With SIGNUP_CODE set, the code is needed to register. */
+const SIGNUP_OPEN = (process.env.SIGNUP || 'open').toLowerCase() !== 'off';
+const SIGNUP_CODE = (process.env.SIGNUP_CODE || '').trim();
 const SESSION_DAYS = 30;
 const SESSION_COOKIE = 'md_session';
 const LOGIN_COOKIE = 'md_login';
@@ -65,6 +68,18 @@ function recordFailure(keys: string[]) {
     failures.set(k, f && f.until > now ? { count: f.count + 1, until: f.until } : { count: 1, until: now + WINDOW });
   }
   if (failures.size > 10_000) for (const [k, f] of failures) if (f.until <= now) failures.delete(k);
+}
+
+/** At most 5 new accounts per address and hour. */
+const signups = new Map<string, number[]>();
+function signupBlocked(key: string): boolean {
+  const recent = (signups.get(key) ?? []).filter((t) => t > Date.now() - 3_600_000);
+  signups.set(key, recent);
+  return recent.length >= 5;
+}
+function recordSignup(key: string) {
+  signups.set(key, [...(signups.get(key) ?? []), Date.now()]);
+  if (signups.size > 10_000) signups.clear();
 }
 
 // ---- Sessions -----------------------------------------------------------------------------
@@ -134,7 +149,9 @@ export function registerAuth(app: FastifyInstance) {
   /** What the login page should offer. */
   app.get('/auth/config', async (req) => ({
     oidc: OIDC_ENABLED,
-    setup: !OIDC_ENABLED && !hasUsers(),
+    // Without Authentik and without any account, registering is always possible (first account).
+    signup: SIGNUP_OPEN || (!OIDC_ENABLED && !hasUsers()),
+    signupCode: !!SIGNUP_CODE,
     loggedIn: !!sessionOf(req),
   }));
 
@@ -153,21 +170,31 @@ export function registerAuth(app: FastifyInstance) {
     return { ok: true };
   });
 
-  /** First account when Authentik is not configured and nobody exists yet. */
-  app.post('/auth/setup', async (req, reply) => {
-    if (OIDC_ENABLED || hasUsers()) return reply.code(403).send({ error: 'Setup is not available' });
-    const { username = '', password = '' } = (req.body ?? {}) as { username?: string; password?: string };
-    const name = String(username).trim();
+  /** Create an account with username and password. */
+  app.post('/auth/register', async (req, reply) => {
+    if (!(SIGNUP_OPEN || (!OIDC_ENABLED && !hasUsers()))) return reply.code(403).send({ error: 'Registration is turned off' });
+    const keys = [`signup:${req.ip}`];
+    if (signupBlocked(keys[0])) return reply.code(429).send({ error: 'Too many new accounts from this address. Try again later.' });
+    const { username = '', password = '', language = 'de', code = '' } = (req.body ?? {}) as Record<string, string>;
+    if (SIGNUP_CODE) {
+      const a = Buffer.from(String(code)), b = Buffer.from(SIGNUP_CODE);
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        recordFailure([`ip:${req.ip}`]);
+        return reply.code(403).send({ error: 'Wrong invitation code' });
+      }
+    }
+    const name = String(username).trim().toLowerCase();
     if (!USERNAME_RE.test(name)) return reply.code(400).send({ error: 'Username: 3–64 letters, digits or . _ @ -' });
     if (String(password).length < MIN_PASSWORD) return reply.code(400).send({ error: `Password must be at least ${MIN_PASSWORD} characters` });
+    const lang = language === 'en' ? 'en' : 'de';
     const hash = await hashPassword(String(password));
-    // Check again and insert in one transaction, so two simultaneous setups cannot both succeed.
     const id = db.transaction(() => {
-      if (hasUsers()) return null;
-      return Number(db.prepare('INSERT INTO users (sub, name, email, username, password_hash) VALUES (?, ?, ?, ?, ?)')
-        .run(`local:${name.toLowerCase()}`, name, '', name.toLowerCase(), hash).lastInsertRowid);
+      if (db.prepare('SELECT 1 FROM users WHERE username = ? COLLATE NOCASE OR sub = ?').get(name, `local:${name}`)) return null;
+      return Number(db.prepare('INSERT INTO users (sub, name, email, username, password_hash, settings) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(`local:${name}`, String(username).trim(), '', name, hash, JSON.stringify({ language: lang })).lastInsertRowid);
     }).immediate();
-    if (id === null) return reply.code(403).send({ error: 'Setup is not available' });
+    if (id === null) return reply.code(409).send({ error: 'This username is taken' });
+    recordSignup(keys[0]);
     startSession(reply, id, 'password');
     return { ok: true };
   });
