@@ -4,13 +4,14 @@ import path from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import type { Grade } from 'ts-fsrs';
 import { db, MEDIA_DIR } from './db.ts';
-import { requireUser, type User } from './auth.ts';
+import { checkPassword, endOtherSessions, hashPassword, MIN_PASSWORD, requireUser, USERNAME_RE, type User } from './auth.ts';
 import {
   DEFAULT_SETTINGS, dayEnd, dayStart, makeScheduler, previewIntervals, retrievability, schedule, type CardRow,
 } from './scheduler.ts';
 import { createNote, rowToNote, updateNote, validateNote, type NoteInput } from './notes.ts';
 import { importApkg } from './apkg.ts';
 import { importWords, listDecks, loadDeck, parseWordList } from './decks.ts';
+import { parseNotesJson } from './textImport.ts';
 import { MIN_REVIEWS, optimizeParameters } from './optimize.ts';
 import type { Settings } from '../shared/types.ts';
 
@@ -172,7 +173,47 @@ export function registerRoutes(app: FastifyInstance) {
       ? db.prepare('SELECT * FROM courses WHERE user_id = ? AND id = ?').all(userId, courseId)
       : db.prepare('SELECT * FROM courses WHERE user_id = ? ORDER BY name COLLATE NOCASE').all(userId)) as CourseRow[];
 
-  app.get('/api/me', async (req) => ({ name: req.user.name, email: req.user.email }));
+  app.get('/api/me', async (req) => ({
+    name: req.user.name,
+    email: req.user.email,
+    username: req.user.username,
+    hasPassword: !!req.user.password_hash,
+    loginMethod: req.sessionMethod,
+    language: JSON.parse(req.user.settings || '{}').language === 'en' ? 'en' : 'de',
+  }));
+
+  app.put('/api/me/language', async (req, reply) => {
+    const language = (req.body as any)?.language;
+    if (language !== 'de' && language !== 'en') return reply.code(400).send({ error: 'Unknown language' });
+    const s = JSON.parse(req.user.settings || '{}');
+    db.prepare('UPDATE users SET settings = ? WHERE id = ?').run(JSON.stringify({ ...s, language }), req.user.id);
+    return { ok: true };
+  });
+
+  /** Set or change the username and password for logging in without Authentik. */
+  app.put('/api/account/password', async (req, reply) => {
+    const { username = '', password = '', currentPassword = '' } = (req.body ?? {}) as Record<string, string>;
+    const name = String(username).trim().toLowerCase();
+    if (!USERNAME_RE.test(name)) return reply.code(400).send({ error: 'Username: 3–64 letters, digits or . _ @ -' });
+    if (String(password).length < MIN_PASSWORD) return reply.code(400).send({ error: `Password must be at least ${MIN_PASSWORD} characters` });
+    // Someone who only got in with the password must know the current one to change it.
+    if (req.user.password_hash && req.sessionMethod === 'password') {
+      const ok = await checkPassword(String(currentPassword), req.user.password_hash);
+      if (!ok) return reply.code(403).send({ error: 'Current password is wrong' });
+    }
+    const taken = db.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE AND id != ?').get(name, req.user.id);
+    if (taken) return reply.code(409).send({ error: 'This username is taken' });
+    db.prepare('UPDATE users SET username = ?, password_hash = ? WHERE id = ?').run(name, await hashPassword(String(password)), req.user.id);
+    endOtherSessions(req);
+    return { ok: true };
+  });
+
+  app.delete('/api/account/password', async (req, reply) => {
+    if (req.sessionMethod === 'password') return reply.code(400).send({ error: 'Log in with Authentik to remove the password login' });
+    db.prepare('UPDATE users SET password_hash = NULL WHERE id = ?').run(req.user.id);
+    endOtherSessions(req);
+    return { ok: true };
+  });
 
   // ---- Courses -------------------------------------------------------------
   app.get('/api/courses', async (req) => {
@@ -270,7 +311,11 @@ export function registerRoutes(app: FastifyInstance) {
   app.put('/api/notes/:id', async (req, reply) => {
     const n = checkedNote(req.user.id, req.body);
     if (typeof n === 'string') return reply.code(400).send({ error: n });
-    updateNote(req.user.id, Number((req.params as any).id), n);
+    const id = Number((req.params as any).id);
+    if (!db.prepare('SELECT 1 FROM notes WHERE id = ? AND user_id = ?').get(id, req.user.id)) {
+      return reply.code(404).send({ error: 'Card not found' });
+    }
+    updateNote(req.user.id, id, n);
     return { ok: true };
   });
 
@@ -456,7 +501,8 @@ export function registerRoutes(app: FastifyInstance) {
     if (!stepRe.test(s.learningSteps) || !stepRe.test(s.relearningSteps)) {
       return reply.code(400).send({ error: 'Steps look like "1m 10m" (m, h or d)' });
     }
-    db.prepare('UPDATE users SET settings = ? WHERE id = ?').run(JSON.stringify(s), req.user.id);
+    const old = JSON.parse(req.user.settings || '{}');
+    db.prepare('UPDATE users SET settings = ? WHERE id = ?').run(JSON.stringify({ ...old, ...s }), req.user.id);
     return { ok: true };
   });
 
@@ -502,6 +548,43 @@ export function registerRoutes(app: FastifyInstance) {
       );
     }
     return { courseId, ...importWords(req.user.id, courseId, deck.entries) };
+  });
+
+  /**
+   * Paste or upload text: JSON notes (any card type) or a word list. Goes into an existing course,
+   * or a course with the given name (created if needed; for JSON the file's "course" is the default).
+   * JSON is all-or-nothing: with any problem, nothing is imported and every problem is listed.
+   */
+  app.post('/api/import/text', { bodyLimit: 20 * 1024 * 1024 }, async (req, reply) => {
+    const { text = '', courseId, newCourse = '' } = (req.body ?? {}) as { text?: string; courseId?: number; newCourse?: string };
+    const body = String(text).trim();
+    if (!body) return reply.code(400).send({ error: 'Nothing to import' });
+    const isJson = body.startsWith('{') || body.startsWith('[') || body.startsWith('```');
+    const parsed = isJson ? parseNotesJson(body) : null;
+    if (parsed?.problems.length) return reply.code(400).send({ error: 'The import has problems', problems: parsed.problems.slice(0, 50), repaired: parsed.repaired });
+    const words = isJson ? null : parseWordList(body);
+    if (words && !words.entries.length) return reply.code(400).send({ error: 'No words found. Each line needs a word and its meaning, separated by a tab, | or ;' });
+
+    let target = Number(courseId) || 0;
+    if (target) {
+      if (!userCourses(req.user.id, target).length) return reply.code(400).send({ error: 'Pick a course' });
+    } else {
+      const name = (String(newCourse).trim() || parsed?.course || '').slice(0, 80);
+      if (!name) return reply.code(400).send({ error: 'Pick a course' });
+      const existing = db.prepare('SELECT id FROM courses WHERE user_id = ? AND name = ?').get(req.user.id, name) as { id: number } | undefined;
+      target = existing?.id ?? Number(
+        db.prepare('INSERT INTO courses (user_id, name, color, new_per_day) VALUES (?, ?, ?, 20)').run(req.user.id, name, '#f26a2e').lastInsertRowid,
+      );
+    }
+    if (words) return { kind: 'words', courseId: target, skipped: words.skipped, ...importWords(req.user.id, target, words.entries) };
+    let cards = 0;
+    db.transaction(() => {
+      for (const n of parsed!.notes) {
+        const noteId = createNote(req.user.id, { ...n, courseId: target });
+        cards += (db.prepare('SELECT COUNT(*) AS n FROM cards WHERE note_id = ?').get(noteId) as { n: number }).n;
+      }
+    })();
+    return { kind: 'json', courseId: target, added: parsed!.notes.length, cards, repaired: parsed!.repaired };
   });
 
   app.post('/api/import/words', async (req, reply) => {

@@ -6,6 +6,7 @@ import { api, ApiError, daysUntil } from '../api.ts';
 import { Known } from '../components/Progress.tsx';
 import { CourseDot, useApp } from '../App.tsx';
 import { Counts, ExamChip, NoteRow } from './Home.tsx';
+import { t, tn } from '../i18n.ts';
 
 const COLORS = ['#f26a2e', '#3987e5', '#199e70', '#c98500', '#d55181', '#9085e9', '#e66767', '#5c6b82'];
 
@@ -31,33 +32,33 @@ export function CourseModal({ course, onClose, onSaved, onDeleted }: {
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <form className="panel modal" onSubmit={save}>
-        <h2>{course ? 'Course settings' : 'New course'}</h2>
+        <h2>{course ? t('Course settings') : t('New course')}</h2>
         {error && <div className="error">{error}</div>}
-        <label className="field"><span>Name</span>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="e.g. Fluids" />
+        <label className="field"><span>{t('Name')}</span>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder={t('e.g. Fluids')} />
         </label>
         <div className="field">
-          <span className="field-label">Colour</span>
+          <span className="field-label">{t('Colour')}</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {COLORS.map((c) => (
-              <button key={c} type="button" aria-label={`Colour ${c}`} onClick={() => setColor(c)}
+              <button key={c} type="button" aria-label={`${t('Colour')} ${c}`} onClick={() => setColor(c)}
                 style={{ width: 30, height: 30, borderRadius: '50%', background: c, cursor: 'pointer', border: 0,
                   outline: color === c ? '2px solid var(--text)' : 'none', outlineOffset: 2 }} />
             ))}
           </div>
         </div>
         <div className="row">
-          <label className="field"><span>Exam date (optional)</span>
+          <label className="field"><span>{t('Exam date (optional)')}</span>
             <input type="date" value={examDate} onChange={(e) => setExamDate(e.target.value)} />
           </label>
-          <label className="field"><span>New cards per day</span>
+          <label className="field"><span>{t('New cards per day')}</span>
             <input type="number" min={0} value={newPerDay} onChange={(e) => setNewPerDay(e.target.value)} />
           </label>
         </div>
-        <p className="hint">With an exam date, no card is scheduled past the exam: each one comes up again in the last three days before it.</p>
+        <p className="hint">{t('With an exam date, no card is scheduled past the exam: each one comes up again in the last three days before it.')}</p>
         <div className="sticky-actions">
-          <button className="btn primary" type="submit">{course ? 'Save' : 'Create course'}</button>
-          <button className="btn ghost" type="button" onClick={onClose}>Cancel</button>
+          <button className="btn primary" type="submit">{course ? t('Save') : t('Create course')}</button>
+          <button className="btn ghost" type="button" onClick={onClose}>{t('Cancel')}</button>
           {course && onDeleted && (
             <button className="btn ghost danger" type="button" style={{ marginLeft: 'auto' }}
               onClick={async () => {
@@ -65,7 +66,7 @@ export function CourseModal({ course, onClose, onSaved, onDeleted }: {
                 await api(`/api/courses/${course.id}`, { method: 'DELETE' });
                 onDeleted();
               }}>
-              {confirmDelete ? 'Delete course and all its cards?' : 'Delete'}
+              {confirmDelete ? t('Delete course and all its cards?') : t('Delete')}
             </button>
           )}
         </div>
@@ -84,7 +85,7 @@ export function CoursePage() {
 
   useEffect(() => { setNotes(null); api<Note[]>(`/api/notes?course=${id}&limit=500`).then(setNotes); }, [id]);
 
-  if (courses && !course) return <div className="page"><h1>Course not found</h1><p className="sub"><Link to="/">Back to Home</Link></p></div>;
+  if (courses && !course) return <div className="page"><h1>{t('Course not found')}</h1><p className="sub"><Link to="/">{t('Back to Home')}</Link></p></div>;
   if (!course) return null;
   const c = course.counts!;
   const todo = c.new + c.learning + c.due;
@@ -94,15 +95,15 @@ export function CoursePage() {
       <div className="page-head">
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}><CourseDot course={course} size={34} /> {course.name}</h1>
-          <p className="sub">{c.total} card{c.total === 1 ? '' : 's'} · {course.newPerDay} new per day</p>
+          <p className="sub">{tn(c.total, '{n} card', '{n} cards')} · {t('{n} new per day', { n: course.newPerDay })}</p>
           <ExamChip date={course.examDate} />
         </div>
         <div className="actions">
-          <button className="btn ghost" onClick={() => setEdit(true)}><Pencil size={16} /> Settings</button>
-          <Link to={`/new?course=${course.id}`} className="btn"><Plus size={18} /> Add card</Link>
-          {c.total > 0 && <Link to={`/cram/${course.id}`} className="btn" title="Go through every card without changing the schedule"><Zap size={16} /> Cram</Link>}
-          {todo > 0 && <Link to={`/review/${course.id}?quick=1`} className="btn" title="About 15 cards, then stop"><Timer size={16} /> 5 min</Link>}
-          {todo > 0 && <Link to={`/review/${course.id}`} className="btn primary"><Play size={17} /> Study {todo}</Link>}
+          <button className="btn ghost" onClick={() => setEdit(true)}><Pencil size={16} /> {t('Settings')}</button>
+          <Link to={`/new?course=${course.id}`} className="btn"><Plus size={18} /> {t('Add card')}</Link>
+          {c.total > 0 && <Link to={`/cram/${course.id}`} className="btn" title={t('Go through every card without changing the schedule')}><Zap size={16} /> {t('Cram')}</Link>}
+          {todo > 0 && <Link to={`/review/${course.id}?quick=1`} className="btn" title={t('About 15 cards, then stop')}><Timer size={16} /> {t('5 min')}</Link>}
+          {todo > 0 && <Link to={`/review/${course.id}`} className="btn primary"><Play size={17} /> {t('Study {n}', { n: todo })}</Link>}
         </div>
       </div>
 
@@ -111,11 +112,11 @@ export function CoursePage() {
         {c.total > 0 && <Known value={course.known ?? 0} exam={!!course.examDate && daysUntil(course.examDate) >= 0} />}
       </div>
 
-      <h2>Cards</h2>
+      <h2>{t('Cards')}</h2>
       {notes && notes.length === 0 && (
         <div className="empty">
-          This course has no cards yet.
-          <div><Link to={`/new?course=${course.id}`} className="btn primary"><Plus size={18} /> Add the first card</Link></div>
+          {t('This course has no cards yet.')}
+          <div><Link to={`/new?course=${course.id}`} className="btn primary"><Plus size={18} /> {t('Add the first card')}</Link></div>
         </div>
       )}
       {notes && notes.length > 0 && <div className="list">{notes.map((n) => <NoteRow key={n.id} n={n} showCourse={false} />)}</div>}

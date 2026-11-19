@@ -1,7 +1,9 @@
 # Card
 
 Spaced-repetition flashcards built for engineering study rather than rote facts. It schedules reviews
-with FSRS (the algorithm current Anki uses), runs as one Docker container, and logs in through Authentik.
+with FSRS (the algorithm current Anki uses) and runs as one Docker container. Login is through
+Authentik or with a username and password. The interface is in German (default) or English and
+works on phones (bottom bar, installable to the home screen).
 
 ## Card types
 
@@ -25,6 +27,26 @@ Also: per-course exam dates (no card is scheduled past the exam), cram mode, und
 To keep you coming back: a daily goal ring and streak on Home, a year heatmap of study days,
 a "known %" estimate per course, 5-minute sessions that stop after 15 cards, reviews interleaved
 across card types and courses, and an answer timer bar that shows the answer when it runs out.
+
+## Login
+
+- **Authentik** (OpenID Connect): the *Log in with Authentik* button on the login page.
+- **Username and password**: after logging in with Authentik once, set them under *Settings → Login
+  without Authentik*. Passwords are stored as scrypt hashes; after 10 failed attempts within 15 minutes
+  per username or address, logins are refused for a while.
+- **Without Authentik configured** (no `OIDC_ISSUER`), the first visit offers to create the first
+  account; after that, setup is closed.
+
+The language (Deutsch/English) can be picked on the login page, in the account menu or in Settings,
+and is stored per account.
+
+## Wiki and AI import
+
+The **Wiki** page explains every card type and how to write cards, and has a *Copy instructions*
+button with the exact import format for an AI. Paste the AI's JSON under **Import → Paste text**. The
+import is all-or-nothing: if one card is wrong, nothing is imported and each problem is listed.
+Single backslashes in LaTeX (`\frac` instead of `\\frac`), the most common AI mistake, are repaired
+automatically.
 
 ## Decks and word lists
 
@@ -74,7 +96,7 @@ server in once with `sudo docker login git.maidev.dk` (a token with package: Rea
 | Variable | Meaning |
 |---|---|
 | `APP_URL` | Public URL of the app, no trailing slash. Used for the login redirect and secure cookies. |
-| `OIDC_ISSUER` | Authentik issuer URL, e.g. `https://auth.example.com/application/o/card/`. |
+| `OIDC_ISSUER` | Authentik issuer URL, e.g. `https://auth.example.com/application/o/card/`. Optional: without it, only password login. |
 | `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | From the Authentik provider. |
 | `TZ` | Time zone. A study day ends at 04:00 local time. |
 | `DATA_DIR` | Where the SQLite database and images live (`/data` in the image). |
@@ -110,3 +132,19 @@ login flow against a stub identity provider.
 - `server/` Fastify API, SQLite, FSRS scheduling (`ts-fsrs`), OpenID login, Anki import
 - `client/` React app (Vite)
 - `shared/` types and the numeric/unit checker used by both
+
+## Security
+
+- Sessions: random 256-bit ids, stored hashed; cookies are `HttpOnly`, `SameSite=Lax` and `Secure` when
+  `APP_URL` is https.
+- Every request that changes data must come from the app's own origin (`APP_URL`), which blocks
+  cross-site request forgery, also from other sites on the same domain.
+- Strict Content Security Policy (no inline scripts, no framing of Card), `nosniff`, HSTS on https.
+- Every user only sees and changes their own courses, cards and images; images are served to logged-in
+  users only. Uploads accept PNG, JPEG, GIF, WebP and AVIF only.
+- The OpenID login uses PKCE, state and nonce.
+
+## Feedback
+
+The *Feedback* button opens https://feedback.maidev.dk. To be able to pick Card there, add
+`{ slug: "card", name: "Card", icons: [] }` to the `APPS` list of the feedback page.

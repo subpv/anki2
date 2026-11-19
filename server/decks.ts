@@ -17,6 +17,8 @@ import type { VocabData } from '../shared/types.ts';
  */
 export interface WordList {
   title: string; description: string; course: string; entries: VocabData[]; skipped: number;
+  /** German title/description from "# title_de:" / "# description_de:" lines. */
+  titleDe: string; descriptionDe: string;
 }
 
 export function parseWordList(text: string, fallbackTitle = 'Word list'): WordList {
@@ -26,7 +28,7 @@ export function parseWordList(text: string, fallbackTitle = 'Word list'): WordLi
     const line = raw.trim();
     if (!line) continue;
     if (line.startsWith('#')) {
-      const m = line.match(/^#\s*(title|description|course)\s*:\s*(.*)$/i);
+      const m = line.match(/^#\s*((?:title|description)(?:_de)?|course)\s*:\s*(.*)$/i);
       if (m) meta[m[1].toLowerCase()] = m[2].trim();
       continue;
     }
@@ -45,6 +47,8 @@ export function parseWordList(text: string, fallbackTitle = 'Word list'): WordLi
     title: meta.title || fallbackTitle,
     description: meta.description || '',
     course: meta.course || meta.title || fallbackTitle,
+    titleDe: meta.title_de || '',
+    descriptionDe: meta.description_de || '',
     entries,
     skipped,
   };
@@ -54,7 +58,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 // ../decks from both server/ (development) and dist/ (Docker image).
 const DECKS_DIR = path.join(here, '..', 'decks');
 
-export interface DeckInfo { id: string; title: string; description: string; course: string; words: number; pictures: number }
+export interface DeckInfo {
+  id: string; title: string; description: string; titleDe: string; descriptionDe: string; course: string; words: number; pictures: number;
+}
 
 export function loadDeck(id: string): WordList | null {
   if (!/^[a-z0-9-]+$/.test(id)) return null;
@@ -73,7 +79,7 @@ export function listDecks(): DeckInfo[] {
       const id = f.slice(0, -4);
       const d = loadDeck(id)!;
       return {
-        id, title: d.title, description: d.description, course: d.course,
+        id, title: d.title, description: d.description, titleDe: d.titleDe, descriptionDe: d.descriptionDe, course: d.course,
         words: d.entries.length, pictures: d.entries.filter((e) => e.picture).length,
       };
     });

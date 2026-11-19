@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Trash2, Upload } from 'lucide-react';
 import type { OcclusionData, OcclusionRect } from '../../../shared/types.ts';
 import { uploadImage } from '../api.ts';
+import { t } from '../i18n.ts';
 
 const newId = () => Math.random().toString(36).slice(2, 8);
 
@@ -37,16 +38,16 @@ export function OcclusionEditor({ data, onChange }: { data: OcclusionData; onCha
   return (
     <div>
       {error && <div className="error">{error}</div>}
-      <label className="field"><span>Title or question (optional)</span>
-        <input type="text" value={data.title ?? ''} onChange={(e) => onChange({ ...data, title: e.target.value })} placeholder="e.g. Label the parts of the H-bridge" />
+      <label className="field"><span>{t('Title or question (optional)')}</span>
+        <input type="text" value={data.title ?? ''} onChange={(e) => onChange({ ...data, title: e.target.value })} placeholder={t('e.g. Label the parts of the H-bridge')} />
       </label>
       <label className="btn" style={{ marginBottom: 12 }}>
-        <Upload size={16} /> {busy ? 'Uploading…' : data.image ? 'Replace image' : 'Upload image'}
+        <Upload size={16} /> {busy ? t('Uploading…') : data.image ? t('Replace image') : t('Upload image')}
         <input type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
       </label>
       {data.image && (
         <>
-          <p className="hint" style={{ marginBottom: 8 }}>Drag on the image to cover a label. Each box becomes one card.</p>
+          <p className="hint" style={{ marginBottom: 8 }}>{t('Drag on the image to cover a label. Each box becomes one card.')}</p>
           <div
             ref={wrap} className="occ draw"
             onPointerDown={(e) => { start.current = pos(e); (e.target as Element).setPointerCapture?.(e.pointerId); }}
@@ -75,9 +76,9 @@ export function OcclusionEditor({ data, onChange }: { data: OcclusionData; onCha
             {data.rects.map((r, i) => (
               <div key={r.id} className="sub-row" style={{ gridTemplateColumns: '28px 1fr 36px' }}>
                 <span className="muted num">{i + 1}</span>
-                <input type="text" value={r.label} placeholder="What is under this box?" autoFocus={sel === r.id}
+                <input type="text" value={r.label} placeholder={t('What is under this box?')} autoFocus={sel === r.id}
                   onFocus={() => setSel(r.id)} onChange={(e) => update(r.id, { label: e.target.value })} />
-                <button type="button" className="btn ghost small" aria-label="Remove box"
+                <button type="button" className="btn ghost small" aria-label={t('Remove box')}
                   onClick={() => onChange({ ...data, rects: data.rects.filter((x) => x.id !== r.id) })}><Trash2 size={15} /></button>
               </div>
             ))}

@@ -93,7 +93,10 @@ test('full login through the identity provider, then logout', async () => {
 
   const me = await get(`${srv.url}/api/me`);
   assert.equal(me.status, 200);
-  assert.deepEqual(await me.json(), { name: 'Test Engineer', email: 'test@example.com' });
+  const meData = await me.json();
+  assert.equal(meData.name, 'Test Engineer');
+  assert.equal(meData.email, 'test@example.com');
+  assert.equal(meData.loginMethod, 'oidc');
 
   const out = await get(`${srv.url}/auth/logout`, 'POST');
   assert.deepEqual(await out.json(), { redirect: `${ISSUER}end-session/` });
@@ -106,6 +109,8 @@ test('a callback with a forged state is rejected', async () => {
   const back = await get(authUrl.href);
   const forged = new URL(back.headers.get('location')!);
   forged.searchParams.set('state', 'forged');
-  assert.equal((await get(forged.href)).status, 401);
+  const res = await get(forged.href);
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get('location'), '/login?error=oidc-failed');
   assert.equal((await get(`${srv.url}/api/me`)).status, 401);
 });

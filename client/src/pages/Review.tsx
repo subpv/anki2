@@ -5,6 +5,7 @@ import { TIMER_FACTOR, type ReviewCard, type Summary } from '../../../shared/typ
 import { api } from '../api.ts';
 import { CourseDot, useApp } from '../App.tsx';
 import { CardView, type CardHandle } from '../components/CardView.tsx';
+import { t } from '../i18n.ts';
 
 const GRADES = [
   { g: 1, label: 'Again' }, { g: 2, label: 'Hard' }, { g: 3, label: 'Good' }, { g: 4, label: 'Easy' },
@@ -156,14 +157,14 @@ export function Review({ mode }: { mode: 'review' | 'cram' }) {
   return (
     <div className="review">
       <div className="review-top">
-        <Link to={back} className="icon-btn" aria-label="Close"><X size={18} /></Link>
+        <Link to={back} className="icon-btn" aria-label={t('Close')}><X size={18} /></Link>
         <div className="where">
-          {course ? <><CourseDot course={course} size={22} /> {course.name}</> : 'All courses'}
-          {mode === 'cram' && <span className="badge">Cram</span>}
+          {course ? <><CourseDot course={course} size={22} /> {course.name}</> : t('All courses')}
+          {mode === 'cram' && <span className="badge">{t('Cram')}</span>}
           {quick && <span className="badge">5-minute session · {Math.min(done + 1, QUICK_CARDS)} / {QUICK_CARDS}</span>}
         </div>
         {mode === 'review' ? (
-          <div className="pill-counts" title="New · Learning · To review">
+          <div className="pill-counts" title={t('New · Learning · To review')}>
             <span className={`n ${which === 'n' ? 'cur' : ''}`}>{counts.new}</span>
             <span className={`l ${which === 'l' ? 'cur' : ''}`}>{counts.learning}</span>
             <span className={`d ${which === 'd' ? 'cur' : ''}`}>{counts.due}</span>
@@ -178,28 +179,28 @@ export function Review({ mode }: { mode: 'review' | 'cram' }) {
       {!loading && !cur && (
         <div className="done">
           <div className="big"><Check size={30} /></div>
-          <h1>{mode === 'cram' ? 'Cram finished' : finished ? 'Session complete' : done > 0 ? 'Done for now' : 'Nothing due'}</h1>
+          <h1>{mode === 'cram' ? t('Cram finished') : finished ? t('Session complete') : done > 0 ? t('Done for now') : t('Nothing due')}</h1>
           <p className="sub">
-            {mode === 'cram' ? `You went through all ${cramTotal} cards. The schedule was not changed.`
-              : finished ? 'That was your 5-minute session.'
-              : done > 0 ? 'Nothing else is due right now. Come back when more cards are ready.'
-              : 'No cards are due here right now.'}
+            {mode === 'cram' ? t('You went through all {n} cards. The schedule was not changed.', { n: cramTotal })
+              : finished ? t('That was your 5-minute session.')
+              : done > 0 ? t('Nothing else is due right now. Come back when more cards are ready.')
+              : t('No cards are due here right now.')}
           </p>
           {mode === 'review' && done > 0 && (
             <div className="session-stats">
-              <div><b>{done}</b>cards</div>
-              <div><b>{Math.round(((done - again) / done) * 100)} %</b>remembered</div>
-              <div><b>{fmtTime(sessionMs.current)}</b>time</div>
+              <div><b>{done}</b>{t('cards')}</div>
+              <div><b>{Math.round(((done - again) / done) * 100)} %</b>{t('remembered')}</div>
+              <div><b>{fmtTime(sessionMs.current)}</b>{t('time')}</div>
             </div>
           )}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 20 }}>
-            <Link to={back} className="btn primary">Back</Link>
+            <Link to={back} className="btn primary">{t('Back')}</Link>
             {finished && (
               <button className="btn" onClick={() => { setFinished(false); setDone(0); setAgain(0); sessionStart.current = Date.now(); setLoading(true); load(); }}>
                 Another 5 minutes
               </button>
             )}
-            {mode === 'review' && canUndo && <button className="btn" onClick={undo}><Undo2 size={16} /> Undo last</button>}
+            {mode === 'review' && canUndo && <button className="btn" onClick={undo}><Undo2 size={16} /> {t('Undo last')}</button>}
           </div>
         </div>
       )}
@@ -207,12 +208,12 @@ export function Review({ mode }: { mode: 'review' | 'cram' }) {
       {cur && (
         <>
           {timeLimit > 0 && (
-            <div className={`lifebar ${timedOut ? 'out' : revealed ? 'run stopped' : 'run'}`} role="timer" aria-label="Time left to answer">
+            <div className={`lifebar ${timedOut ? 'out' : revealed ? 'run stopped' : 'run'}`} role="timer" aria-label={t('Time left to answer')}>
               <i key={serial} style={{ animationDuration: `${timeLimit}s` }} />
             </div>
           )}
           <div className="panel review-card">
-            {timedOut && <div className="timeup"><Hourglass size={15} /> Time's up</div>}
+            {timedOut && <div className="timeup"><Hourglass size={15} /> {t("Time's up")}</div>}
             {!course && <div className="card-kicker" style={{ display: 'flex', gap: 8, alignItems: 'center' }}><CourseDot course={cur.course} size={18} /> {cur.course.name}</div>}
             <CardView key={serial} ref={cardRef} note={cur.note} ord={cur.card.ord} revealed={revealed} interactive
               onReveal={reveal} onSuggest={onSuggest} />
@@ -221,26 +222,26 @@ export function Review({ mode }: { mode: 'review' | 'cram' }) {
           <div className="review-bar">
             {!revealed ? (
               <button className="btn primary lg" style={{ width: '100%' }} onClick={reveal}>
-                {cur.note.type === 'numeric' || cur.note.type === 'param' ? 'Check answer' : cur.note.type === 'derivation' ? 'Next step' : 'Show answer'} <kbd>Space</kbd>
+                {cur.note.type === 'numeric' || cur.note.type === 'param' ? t('Check answer') : cur.note.type === 'derivation' ? t('Next step') : t('Show answer')} <kbd>{t('Space')}</kbd>
               </button>
             ) : mode === 'cram' ? (
               <div className="grades" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <button className="grade g1" onClick={() => answer(1)}>Again<small>back in the pile · 1</small></button>
-                <button className="grade g3" onClick={() => answer(3)}>Got it<small>Space</small></button>
+                <button className="grade g1" onClick={() => answer(1)}>{t('Again')}<small>{t('back in the pile')} · 1</small></button>
+                <button className="grade g3" onClick={() => answer(3)}>{t('Got it')}<small>{t('Space')}</small></button>
               </div>
             ) : (
               <div className="grades">
                 {GRADES.map(({ g, label }) => (
                   <button key={g} className={`grade g${g} ${suggest === g ? 'suggest' : ''}`} onClick={() => answer(g)}>
-                    {label}<small>{cur.intervals[g]} · {g}</small>
+                    {t(label)}<small>{cur.intervals[g]} · {g}</small>
                   </button>
                 ))}
               </div>
             )}
             <div className="review-tools">
-              {mode === 'review' && <button className="btn ghost small" disabled={!canUndo} onClick={undo}><Undo2 size={15} /> Undo <kbd>Z</kbd></button>}
-              <Link className="btn ghost small" to={`/note/${cur.note.id}`}><Pencil size={15} /> Edit <kbd>E</kbd></Link>
-              <button className="btn ghost small" onClick={suspend}><EyeOff size={15} /> Suspend</button>
+              {mode === 'review' && <button className="btn ghost small" disabled={!canUndo} onClick={undo}><Undo2 size={15} /> {t('Undo')} <kbd>Z</kbd></button>}
+              <Link className="btn ghost small" to={`/note/${cur.note.id}`}><Pencil size={15} /> {t('Edit')} <kbd>E</kbd></Link>
+              <button className="btn ghost small" onClick={suspend}><EyeOff size={15} /> {t('Suspend')}</button>
             </div>
           </div>
         </>

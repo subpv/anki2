@@ -45,8 +45,10 @@ function parseMediaEntries(buf: Buffer): string[] {
   return names;
 }
 
+/** Refuse packages that unpack to absurd sizes (zip bombs). */
+const MAX_UNPACKED = 512 * 1024 * 1024;
 const isZstd = (b: Buffer) => b.length > 4 && b.readUInt32LE(0) === 0xfd2fb528;
-const unzstd = (b: Buffer) => (isZstd(b) ? zlib.zstdDecompressSync(b) : b);
+const unzstd = (b: Buffer) => (isZstd(b) ? zlib.zstdDecompressSync(b, { maxOutputLength: MAX_UNPACKED }) : b);
 
 /** Anki field HTML -> our Markdown-with-HTML: MathJax delimiters, media paths, [sound:] tags. */
 function convertField(html: string, media: Map<string, string>): string {
@@ -70,6 +72,9 @@ export interface ImportResult { notes: number; cards: number; media: number; ski
 
 export function importApkg(file: Buffer, userId: number, courseId: number): ImportResult {
   const zip = new AdmZip(file);
+  for (const e of zip.getEntries()) {
+    if (e.header.size > MAX_UNPACKED) throw new Error('The package is too large.');
+  }
   const entry = (name: string) => zip.getEntry(name)?.getData();
   const collection = entry('collection.anki21b') ?? entry('collection.anki21') ?? entry('collection.anki2');
   if (!collection) throw new Error('This file does not look like an Anki deck package (.apkg).');

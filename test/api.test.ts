@@ -264,6 +264,43 @@ test('word list import: tab, pipe and semicolon files', async () => {
   assert.equal((await api('/api/notes', { body: { courseId: id, type: 'vocab', data: { word: 'x', meaning: '' } } })).status, 400);
 });
 
+test('text import: JSON notes into a new course, all-or-nothing, and word lists', async () => {
+  const json = String.raw`{"course":"AI course","notes":[
+    {"type":"basic","front":"Bernoulli?","back":"$p + \frac{1}{2}\rho v^2 = C$"},
+    {"type":"formula","name":"Ohm","latex":"U = R I","symbols":[{"sym":"U","meaning":"voltage","unit":"V"}]}]}`;
+  const r = await api('/api/import/text', { body: { text: json } });
+  assert.equal(r.status, 200, JSON.stringify(r.data));
+  assert.deepEqual([r.data.kind, r.data.added, r.data.cards, r.data.repaired], ['json', 2, 1 + 2, 2]);
+  const notes = (await api(`/api/notes?course=${r.data.courseId}`)).data;
+  assert.ok(notes.some((n: any) => n.data.back === String.raw`$p + \frac{1}{2}\rho v^2 = C$`));
+
+  const bad = await api('/api/import/text', { body: { text: '[{"type":"basic","front":"x","back":"y"},{"type":"basic","front":"only front"}]', courseId: r.data.courseId } });
+  assert.equal(bad.status, 400);
+  assert.deepEqual(bad.data.problems, [{ index: 2, type: 'basic', code: 'missing', field: 'back' }]);
+  assert.equal((await api(`/api/notes?course=${r.data.courseId}`)).data.length, 2, 'nothing imported when one note is bad');
+
+  const words = await api('/api/import/text', { body: { text: 'en kat | die Katze | 🐈', newCourse: 'Words 2' } });
+  assert.deepEqual([words.data.kind, words.data.added], ['words', 1]);
+  assert.equal((await api('/api/import/text', { body: { text: '[{"type":"basic","front":"a","back":"b"}]' } })).status, 400, 'needs a course');
+});
+
+test('cannot edit another user\'s note through its id', async () => {
+  const notes = (await api('/api/notes?limit=1')).data;
+  const id = notes[0].id;
+  const db = new Database(path.join(srv.dataDir, 'card.db'));
+  db.prepare("INSERT INTO users (sub, name) VALUES ('other', 'Other')").run();
+  const other = (db.prepare("SELECT id FROM users WHERE sub = 'other'").get() as any).id;
+  db.prepare('UPDATE notes SET user_id = ? WHERE id = ?').run(other, id);
+  const before = db.prepare('SELECT COUNT(*) AS n FROM cards WHERE note_id = ?').get(id);
+  db.close();
+  const courseId = (await api('/api/courses')).data[0].id;
+  const r = await api(`/api/notes/${id}`, { method: 'PUT', body: { courseId, type: 'cloze', data: { text: '{{c9::x}}' } } });
+  assert.equal(r.status, 404);
+  const db2 = new Database(path.join(srv.dataDir, 'card.db'));
+  assert.deepEqual(db2.prepare('SELECT COUNT(*) AS n FROM cards WHERE note_id = ?').get(id), before);
+  db2.close();
+});
+
 test('optimiser fits parameters from review history', async () => {
   assert.equal((await api('/api/fsrs/optimize', { method: 'POST' })).status, 400, 'refuses with too few reviews');
   // Simulate 300 cards reviewed over ~3 months.

@@ -89,3 +89,17 @@ CREATE TABLE IF NOT EXISTS revlog (
 CREATE INDEX IF NOT EXISTS revlog_user ON revlog(user_id, review);
 CREATE INDEX IF NOT EXISTS revlog_card ON revlog(card_id, review);
 `);
+
+// ---- Migrations for databases created by earlier versions ---------------------------------
+const columns = (table: string) => (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name);
+if (!columns('users').includes('username')) {
+  db.exec(`
+    ALTER TABLE users ADD COLUMN username TEXT;
+    ALTER TABLE users ADD COLUMN password_hash TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS users_username ON users(username COLLATE NOCASE);
+  `);
+}
+if (!columns('sessions').includes('method')) {
+  // Session ids are stored hashed from now on, so sessions from before this change are dropped.
+  db.exec(`DELETE FROM sessions; ALTER TABLE sessions ADD COLUMN method TEXT NOT NULL DEFAULT 'oidc';`);
+}
