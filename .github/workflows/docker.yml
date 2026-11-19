@@ -5,6 +5,7 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -34,10 +35,27 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      # Copy to the Gitea registry too, when the repository variable GITEA_USER and the
+      # secret GITEA_TOKEN (Gitea token with write:package) are set. Optional GITEA_OWNER
+      # pushes to an organisation instead of the user.
+      - id: gitea
+        if: vars.GITEA_USER != ''
+        env:
+          GITEA_USER: ${{ vars.GITEA_USER }}
+          GITEA_OWNER: ${{ vars.GITEA_OWNER }}
+        run: echo "image=git.maidev.dk/$(echo "${GITEA_OWNER:-$GITEA_USER}" | tr '[:upper:]' '[:lower:]')/card" >> "$GITHUB_OUTPUT"
+      - if: steps.gitea.outputs.image != ''
+        uses: docker/login-action@v3
+        with:
+          registry: git.maidev.dk
+          username: ${{ vars.GITEA_USER }}
+          password: ${{ secrets.GITEA_TOKEN }}
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: |
+            ghcr.io/${{ github.repository }}
+            ${{ steps.gitea.outputs.image }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
@@ -48,3 +66,23 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  # Copy the code to the Gitea repository (git.maidev.dk/<owner>/card) on every push to main.
+  # Uses the same GITEA_USER variable and GITEA_TOKEN secret; the token also needs
+  # repository: Read and Write. GitHub stays the source: Gitea's main is overwritten.
+  mirror:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GITEA_USER != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - env:
+          GITEA_USER: ${{ vars.GITEA_USER }}
+          GITEA_OWNER: ${{ vars.GITEA_OWNER }}
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        run: |
+          owner="${GITEA_OWNER:-$GITEA_USER}"
+          git push --force "https://${GITEA_USER}:${GITEA_TOKEN}@git.maidev.dk/${owner}/card.git" HEAD:refs/heads/main
+          git push --force --tags "https://${GITEA_USER}:${GITEA_TOKEN}@git.maidev.dk/${owner}/card.git"

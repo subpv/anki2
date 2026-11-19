@@ -56,9 +56,18 @@ a word) wait until the next day.
 3. **App**: Apps → Discover Apps → ⋮ → *Install via YAML*, paste [`docker-compose.yml`](docker-compose.yml) and fill in the values marked `CHANGE`.
 4. Point your reverse proxy at port `8765`.
 
-The image is built by GitHub Actions and pushed to `ghcr.io/subpv/anki2` on every push to `main`.
-If the repository is private, either make the package public (GitHub → Packages → Package settings)
-or add registry credentials in TrueNAS.
+The image is built by GitHub Actions on every push to `main` and pushed to `ghcr.io/subpv/anki2`
+and, when configured, to the Gitea registry at `git.maidev.dk/<owner>/card`:
+
+1. In Gitea: Settings → Applications → generate a token with **package: Read and Write** and
+   **repository: Read and Write** (the code is copied to `git.maidev.dk/<owner>/card` as well).
+2. In GitHub: repository Settings → Secrets and variables → Actions:
+   - variable `GITEA_USER` = your Gitea username (and optionally `GITEA_OWNER` for an organisation),
+   - secret `GITEA_TOKEN` = the token.
+3. Re-run the latest "Build image" workflow (Actions → Build image → Run workflow) or push to `main`.
+
+TrueNAS then pulls `git.maidev.dk/<owner>/card:latest`. If the Gitea package is private, log the
+server in once with `sudo docker login git.maidev.dk` (a token with package: Read).
 
 ### Configuration
 
