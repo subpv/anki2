@@ -1,7 +1,7 @@
 import { db } from './db.ts';
 import { cardOrds, type Note, type NoteType } from '../shared/types.ts';
 
-const TYPES: NoteType[] = ['basic', 'cloze', 'numeric', 'param', 'formula', 'code', 'derivation', 'occlusion'];
+const TYPES: NoteType[] = ['basic', 'cloze', 'numeric', 'param', 'formula', 'code', 'derivation', 'occlusion', 'vocab'];
 
 export interface NoteInput {
   courseId: number; type: NoteType; data: any; tags?: string; sourceText?: string; sourceUrl?: string;
@@ -14,6 +14,9 @@ export function validateNote(n: NoteInput): string | null {
     if (n.type === 'cloze') return 'Add at least one cloze deletion, e.g. {{c1::answer}}';
     if (n.type === 'occlusion') return 'Draw at least one box on the image';
     return 'This note would not create any cards';
+  }
+  if (n.type === 'vocab' && (!String(n.data.word ?? '').trim() || !String(n.data.meaning ?? '').trim())) {
+    return 'Fill in both the word and its meaning';
   }
   if ((n.type === 'numeric') && !Number.isFinite(Number(n.data.value))) return 'The answer must be a number';
   if (n.sourceUrl && !/^https?:\/\//i.test(n.sourceUrl)) return 'The source link must start with http:// or https://';

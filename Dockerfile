@@ -11,6 +11,7 @@ ENV NODE_ENV=production DATA_DIR=/data PORT=8080
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/decks ./decks
 COPY package.json ./
 VOLUME /data
 EXPOSE 8080

@@ -76,7 +76,10 @@ export function Home({ onNewCourse }: { onNewCourse: () => void }) {
       {courses && courses.length === 0 && (
         <div className="empty">
           No courses yet. A course holds the cards for one subject, like Fluids or Ele2.
-          <div><button className="btn primary" onClick={onNewCourse}><Plus size={18} /> New course</button></div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button className="btn primary" onClick={onNewCourse}><Plus size={18} /> New course</button>
+            <Link to="/import" className="btn">Add a ready-made deck</Link>
+          </div>
         </div>
       )}
       <div className="course-grid">

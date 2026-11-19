@@ -142,6 +142,7 @@ export function Review({ mode }: { mode: 'review' | 'cram' }) {
       if (typing) return; // the answer field submits with Enter by itself
       if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (revealed) answer(mode === 'cram' ? 3 : suggest ?? 3); else reveal(); }
       else if (revealed && ['1', '2', '3', '4'].includes(e.key)) answer(mode === 'cram' ? (e.key === '1' ? 1 : 3) : Number(e.key));
+      else if (e.key === 'h' && !revealed) cardRef.current?.hint();
       else if (e.key === 'z') undo();
       else if (e.key === 'e' && cur) nav(`/note/${cur.note.id}`);
     };

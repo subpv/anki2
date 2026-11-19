@@ -216,6 +216,54 @@ test('summary, daily goal and known share', async () => {
   assert.equal(after.answerSeconds, 0);
 });
 
+test('ready-made Danish deck imports once, into its own course', async () => {
+  const decks = (await api('/api/decks')).data;
+  const da = decks.find((d: any) => d.id === 'danish-german-1000');
+  assert.equal(da.words, 1000);
+  assert.ok(da.pictures > 200);
+
+  const first = (await api('/api/decks/danish-german-1000/import', { body: {} })).data;
+  assert.equal(first.added, 1000);
+  const course = (await api('/api/courses')).data.find((c: any) => c.id === first.courseId);
+  assert.equal(course.name, 'Danish');
+  assert.equal(course.counts.total, 2000, 'two cards per word');
+
+  const again = (await api('/api/decks/danish-german-1000/import', { body: {} })).data;
+  assert.deepEqual(again, { courseId: first.courseId, added: 0, existing: 1000 });
+  assert.equal((await api('/api/decks/../../etc/passwd/import', { body: {} })).status, 404);
+
+  // New words are introduced in list order, and the reverse card of a word waits until another day.
+  const seen: string[] = [];
+  for (let i = 0; i < 6; i++) {
+    const r = (await api(`/api/review/next?course=${first.courseId}`)).data;
+    seen.push(`${r.next.note.data.word}/${r.next.card.ord}`);
+    await api('/api/review/answer', { body: { cardId: r.next.card.id, rating: 4 } });
+  }
+  assert.deepEqual(seen, ['i/w', 'at være/w', 'og/w', 'en / et/w', 'den / det/w', 'på/w']);
+});
+
+test('word list import: tab, pipe and semicolon files', async () => {
+  const id = (await api('/api/courses', { body: { name: 'Words' } })).data.id;
+  const send = async (text: string) => {
+    const form = new FormData();
+    form.append('file', new Blob([text]), 'words.txt');
+    return api(`/api/import/words?course=${id}`, { form });
+  };
+  let r = await send('word\tmeaning\nen hund\tder Hund\t🐕\tPl. hunde\nen kat\tdie Katze\n');
+  assert.deepEqual([r.data.added, r.data.skipped], [2, 0]);
+  r = await send('# comment\nat spise | essen | 🍽️ | spiste, spist\nen hund | der Hund\nkun ord\n');
+  assert.deepEqual([r.data.added, r.data.existing, r.data.skipped], [1, 1, 1]);
+  r = await send('god;gut\n');
+  assert.equal(r.data.added, 1);
+  assert.equal((await send('nothing useful here\n')).status, 400);
+
+  const notes = (await api(`/api/notes?course=${id}`)).data;
+  const hund = notes.find((n: any) => n.data.word === 'en hund');
+  assert.deepEqual(hund.data, { word: 'en hund', meaning: 'der Hund', picture: '🐕', note: 'Pl. hunde' });
+  assert.equal(hund.cardCount, 2);
+  assert.equal((await api('/api/notes', { body: { courseId: id, type: 'vocab', data: { word: 'x', meaning: '' } } })).status, 400);
+});
+
 test('optimiser fits parameters from review history', async () => {
   assert.equal((await api('/api/fsrs/optimize', { method: 'POST' })).status, 400, 'refuses with too few reviews');
   // Simulate 300 cards reviewed over ~3 months.

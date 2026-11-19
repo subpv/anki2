@@ -15,6 +15,7 @@ with FSRS (the algorithm current Anki uses), runs as one Docker container, and l
 | Code | Prompt and highlighted solution (C, C++, Python, MATLAB, Structured Text, VHDL, Verilog, ARM assembly). |
 | Derivation | Reveal a derivation one step at a time. |
 | Image occlusion | Cover labels on a schematic or diagram; one card per box. |
+| Vocabulary | A word and its meaning, asked in both directions. With a picture (emoji or image), the reverse card shows the picture and a hint button. |
 
 All text fields take Markdown and LaTeX (`$inline$`, `$$display$$`). Images can be pasted or dropped in.
 
@@ -24,6 +25,25 @@ Also: per-course exam dates (no card is scheduled past the exam), cram mode, und
 To keep you coming back: a daily goal ring and streak on Home, a year heatmap of study days,
 a "known %" estimate per course, 5-minute sessions that stop after 15 cards, reviews interleaved
 across card types and courses, and an answer timer bar that shows the answer when it runs out.
+
+## Decks and word lists
+
+The **Import** page in the sidebar has:
+
+- **Ready-made decks**, added with one click. Included: *Danish → German, the 1000 most important
+  words* (`decks/danish-german-1000.txt`), in order of importance, with en/et, German articles,
+  plurals and verb forms, and 297 pictures for words that can be drawn. The order is based on the
+  lemma frequency list of [Det Danske Sprog- og Litteraturselskab](https://dsl.dk) (DSL), used under
+  DSL's open licence.
+- **Word lists**: a text file with one word per line, `word | meaning | picture | note`
+  (tab, `|` or `;` between columns). Each line becomes two cards.
+- **Anki decks** (`.apkg`).
+
+To add another ready-made deck, drop a word list with `# title:`, `# description:` and `# course:`
+lines at the top into `decks/`.
+
+Like Anki, once one card of a note has been studied, its other cards (e.g. the reverse direction of
+a word) wait until the next day.
 
 ## Deploy on TrueNAS SCALE
 
