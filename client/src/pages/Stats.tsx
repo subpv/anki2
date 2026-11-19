@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
 import { useApp } from '../App.tsx';
 import { BarChart } from '../components/BarChart.tsx';
+import { Heatmap } from '../components/Progress.tsx';
 
 interface StatsData {
   states: { new: number; learning: number; young: number; mature: number; suspended: number; total: number };
   reviews: { day: number; count: number; again: number }[];
   forecast: { day: number; count: number }[];
+  year: { day: number; count: number }[];
   streak: number; totalReviews: number; today: number; retention: number | null; retentionSample: number;
 }
 
@@ -53,6 +55,9 @@ export function Stats() {
             <Tile k="Mature" v={data.states.mature} s="Interval 21 days or more" />
             <Tile k="Suspended" v={data.states.suspended} />
           </div>
+
+          <h2>Study days, last year</h2>
+          <Heatmap year={data.year} />
 
           <h2>Reviews per day, last 30 days</h2>
           <BarChart label="Reviews per day over the last 30 days" unit="reviews"

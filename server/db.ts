@@ -6,7 +6,17 @@ export const DATA_DIR = process.env.DATA_DIR || path.resolve('data');
 export const MEDIA_DIR = path.join(DATA_DIR, 'media');
 fs.mkdirSync(MEDIA_DIR, { recursive: true });
 
-export const db = new Database(path.join(DATA_DIR, 'mechdeck.db'));
+// The app was briefly called MechDeck; carry an existing database over to the new file name.
+const DB_FILE = path.join(DATA_DIR, 'card.db');
+const OLD_DB_FILE = path.join(DATA_DIR, 'mechdeck.db');
+if (!fs.existsSync(DB_FILE) && fs.existsSync(OLD_DB_FILE)) {
+  const old = new Database(OLD_DB_FILE);
+  old.pragma('wal_checkpoint(TRUNCATE)');
+  old.close();
+  fs.renameSync(OLD_DB_FILE, DB_FILE);
+}
+
+export const db = new Database(DB_FILE);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 

@@ -6,7 +6,7 @@ import { startServer, type Server } from './helpers.ts';
 
 /** A minimal OpenID Connect provider shaped like an Authentik application. */
 const IDP_PORT = 18090;
-const ISSUER = `http://127.0.0.1:${IDP_PORT}/application/o/mechdeck/`;
+const ISSUER = `http://127.0.0.1:${IDP_PORT}/application/o/card/`;
 const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
 const b64 = (x: Buffer | string) => Buffer.from(x).toString('base64url');
 const codes = new Map<string, { nonce: string; challenge: string }>();
@@ -41,7 +41,7 @@ const idp = http.createServer(async (req, res) => {
     const now = Math.floor(Date.now() / 1000);
     const head = b64(JSON.stringify({ alg: 'RS256', kid: 'k1', typ: 'JWT' }));
     const payload = b64(JSON.stringify({
-      iss: ISSUER, sub: 'abc123', aud: 'mechdeck', exp: now + 300, iat: now, nonce: c.nonce,
+      iss: ISSUER, sub: 'abc123', aud: 'card', exp: now + 300, iat: now, nonce: c.nonce,
       name: 'Test Engineer', email: 'test@example.com',
     }));
     const sig = b64(crypto.sign('RSA-SHA256', Buffer.from(`${head}.${payload}`), privateKey));
@@ -55,7 +55,7 @@ before(async () => {
   await new Promise<void>((r) => idp.listen(IDP_PORT, r));
   srv = await startServer(18082, {
     NODE_ENV: 'production', AUTH_DEV_BYPASS: '1', // the bypass must be ignored in production
-    OIDC_ISSUER: ISSUER, OIDC_CLIENT_ID: 'mechdeck', OIDC_CLIENT_SECRET: 's3cret', APP_URL: 'http://127.0.0.1:18082',
+    OIDC_ISSUER: ISSUER, OIDC_CLIENT_ID: 'card', OIDC_CLIENT_SECRET: 's3cret', APP_URL: 'http://127.0.0.1:18082',
   });
 });
 after(() => { srv.stop(); idp.close(); });

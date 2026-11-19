@@ -26,7 +26,7 @@ export function SettingsPage() {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    try { await api('/api/settings', { method: 'PUT', body: s }); setMsg({ ok: true, text: 'Saved. New intervals apply from your next review.' }); }
+    try { await api('/api/settings', { method: 'PUT', body: s }); setMsg({ ok: true, text: 'Saved. Changes apply from your next review.' }); }
     catch (err) { setMsg({ ok: false, text: (err as Error).message }); }
   };
   const optimize = async () => {
@@ -77,6 +77,15 @@ export function SettingsPage() {
             <input type="text" value={s.relearningSteps} onChange={(e) => setS({ ...s, relearningSteps: e.target.value })} placeholder="10m" />
           </label>
         </div>
+        <div className="row">
+          <label className="field"><span>Daily goal (cards)</span>
+            <input type="number" min={1} value={s.dailyGoal} onChange={(e) => setS({ ...s, dailyGoal: Number(e.target.value) })} />
+          </label>
+          <label className="field"><span>Answer timer (seconds, 0 = off)</span>
+            <input type="number" min={0} value={s.answerSeconds} onChange={(e) => setS({ ...s, answerSeconds: Number(e.target.value) })} />
+          </label>
+        </div>
+        <p className="hint" style={{ marginTop: -6, marginBottom: 14 }}>The timer bar drains while a card is open and shows the answer when it runs out. This is the time for a plain recall card; code and numeric cards get 3×, parametrised problems and derivations 4×.</p>
         <button className="btn primary" type="submit">Save</button>
       </form>
 

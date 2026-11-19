@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarClock, FileText, Play, Plus } from 'lucide-react';
-import { NOTE_TYPE_LABELS, noteTitle, type Course, type Note } from '../../../shared/types.ts';
+import { CalendarClock, FileText, Play, Plus, Timer } from 'lucide-react';
+import { NOTE_TYPE_LABELS, noteTitle, type Course, type Note, type Summary } from '../../../shared/types.ts';
 import { api, daysUntil, timeAgo } from '../api.ts';
 import { CourseDot, useApp } from '../App.tsx';
+import { GoalRing, Heatmap, Known } from '../components/Progress.tsx';
 
 export function Counts({ c }: { c: NonNullable<Course['counts']> }) {
   return (
@@ -43,7 +44,8 @@ export function NoteRow({ n, showCourse = true }: { n: Note; showCourse?: boolea
 export function Home({ onNewCourse }: { onNewCourse: () => void }) {
   const { courses } = useApp();
   const [recent, setRecent] = useState<Note[] | null>(null);
-  useEffect(() => { api<Note[]>('/api/notes?limit=8').then(setRecent); }, []);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  useEffect(() => { api<Note[]>('/api/notes?limit=8').then(setRecent); api<Summary>('/api/summary').then(setSummary); }, []);
 
   const total = (courses ?? []).reduce((s, c) => s + (c.counts ? c.counts.new + c.counts.learning + c.counts.due : 0), 0);
   const h = new Date().getHours();
@@ -63,9 +65,12 @@ export function Home({ onNewCourse }: { onNewCourse: () => void }) {
         </div>
         <div className="actions">
           {courses && courses.length > 0 && <Link to="/new" className="btn"><Plus size={18} /> Add card</Link>}
+          {total > 0 && <Link to="/review?quick=1" className="btn" title="About 15 cards, then stop"><Timer size={17} /> 5-minute session</Link>}
           {total > 0 && <Link to="/review" className="btn primary"><Play size={17} /> Study all</Link>}
         </div>
       </div>
+
+      {summary && courses && courses.length > 0 && <GoalRing s={summary} />}
 
       <h2>Due today</h2>
       {courses && courses.length === 0 && (
@@ -79,10 +84,18 @@ export function Home({ onNewCourse }: { onNewCourse: () => void }) {
           <Link key={c.id} to={`/course/${c.id}`} className="panel course-card">
             <div className="top"><CourseDot course={c} /> {c.name}</div>
             <Counts c={c.counts!} />
+            {c.counts!.total > 0 && <Known value={c.known ?? 0} exam={!!c.examDate && daysUntil(c.examDate) >= 0} />}
             <ExamChip date={c.examDate} />
           </Link>
         ))}
       </div>
+
+      {summary && summary.year.some((d) => d.count > 0) && (
+        <>
+          <h2>Your year</h2>
+          <Heatmap year={summary.year} />
+        </>
+      )}
 
       <h2>Recently edited cards</h2>
       {recent && recent.length === 0 && <div className="empty">Cards you add or edit show up here.</div>}

@@ -166,10 +166,60 @@ test('image upload accepts images only', async () => {
   assert.equal((await api('/api/media', { form: bad })).status, 400);
 });
 
+test('due reviews are interleaved by card type', async () => {
+  const id = (await api('/api/courses', { body: { name: 'Mix', newPerDay: 0 } })).data.id;
+  for (let i = 0; i < 10; i++) {
+    await api('/api/notes', { body: { courseId: id, type: 'basic', data: { front: `b${i}`, back: 'x' } } });
+    await api('/api/notes', { body: { courseId: id, type: 'code', data: { prompt: `c${i}`, language: 'c', code: 'x' } } });
+  }
+  // Make every card a review that fell due, basics first: without interleaving that is 10 basics, then 10 code cards.
+  const db = new Database(path.join(srv.dataDir, 'card.db'));
+  db.prepare(
+    `UPDATE cards SET state = 2, stability = 5, difficulty = 5, scheduled_days = 5, reps = 2,
+       last_review = :now - 5 * 86400000,
+       due = :now - 86400000 + (SELECT CASE type WHEN 'basic' THEN 0 ELSE 100000 END FROM notes WHERE notes.id = cards.note_id) + id
+     WHERE course_id = :c`,
+  ).run({ now: Date.now(), c: id });
+  db.close();
+
+  const types: string[] = [];
+  for (let i = 0; i < 20; i++) {
+    const r = (await api(`/api/review/next?course=${id}`)).data;
+    types.push(r.next.note.type);
+    await api('/api/review/answer', { body: { cardId: r.next.card.id, rating: 4 } });
+  }
+  const repeats = types.filter((t, i) => i > 0 && t === types[i - 1]).length;
+  assert.ok(repeats <= 2, `types should alternate, got ${types.join(' ')}`);
+  assert.equal((await api(`/api/review/next?course=${id}`)).data.next, null);
+});
+
+test('summary, daily goal and known share', async () => {
+  const s = (await api('/api/summary')).data;
+  assert.equal(s.year.length, 371);
+  assert.equal(s.year.at(-1).count, s.today);
+  assert.ok(s.today >= 20);
+  assert.equal(s.streak, 1);
+  assert.equal(s.goal, 20);
+  assert.equal(s.answerSeconds, 30);
+
+  const courses = (await api('/api/courses')).data;
+  const mix = courses.find((c: any) => c.name === 'Mix');
+  assert.ok(mix.known > 0.9 && mix.known <= 1, `just-reviewed course should be almost fully known, got ${mix.known}`);
+  const untouched = courses.find((c: any) => c.name === 'Import false');
+  assert.equal(untouched.known, 0);
+
+  const body = { retention: 0.9, maxInterval: 100, learningSteps: '1m 10m', relearningSteps: '10m' };
+  assert.equal((await api('/api/settings', { method: 'PUT', body: { ...body, dailyGoal: 0, answerSeconds: 30 } })).status, 400);
+  assert.equal((await api('/api/settings', { method: 'PUT', body: { ...body, dailyGoal: 35, answerSeconds: 0 } })).status, 200);
+  const after = (await api('/api/summary')).data;
+  assert.equal(after.goal, 35);
+  assert.equal(after.answerSeconds, 0);
+});
+
 test('optimiser fits parameters from review history', async () => {
   assert.equal((await api('/api/fsrs/optimize', { method: 'POST' })).status, 400, 'refuses with too few reviews');
   // Simulate 300 cards reviewed over ~3 months.
-  const db = new Database(path.join(srv.dataDir, 'mechdeck.db'));
+  const db = new Database(path.join(srv.dataDir, 'card.db'));
   const card = (db.prepare('SELECT * FROM cards LIMIT 1').get()) as any;
   const insCard = db.prepare('INSERT INTO cards (note_id, user_id, course_id, ord, due) VALUES (?, ?, ?, ?, 0)');
   const insLog = db.prepare("INSERT INTO revlog (card_id, user_id, course_id, rating, state, review, prev) VALUES (?, ?, ?, ?, 2, ?, '{}')");

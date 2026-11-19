@@ -30,6 +30,8 @@ export interface Note {
 export interface Course {
   id: number; name: string; color: string; examDate: string | null; newPerDay: number;
   counts?: { total: number; new: number; learning: number; due: number };
+  /** Average chance of recalling a card of this course right now (unseen cards count as 0). */
+  known?: number;
 }
 
 export interface ReviewCard {
@@ -41,7 +43,22 @@ export interface ReviewCard {
 
 export interface Settings {
   retention: number; maxInterval: number; learningSteps: string; relearningSteps: string;
+  /** Cards to review per day for the goal ring on Home. */
+  dailyGoal: number;
+  /** Seconds on the answer timer for a plain recall card; 0 turns the timer off. */
+  answerSeconds: number;
 }
+
+export interface Summary {
+  today: number; goal: number; streak: number; answerSeconds: number;
+  /** One entry per day for the last 53 weeks, oldest first. */
+  year: { day: number; count: number }[];
+}
+
+/** Card types that need working out get more time on the answer timer. */
+export const TIMER_FACTOR: Record<NoteType, number> = {
+  basic: 1, cloze: 1, occlusion: 1, formula: 1.5, code: 3, numeric: 3, param: 4, derivation: 4,
+};
 
 export const NOTE_TYPE_LABELS: Record<NoteType, string> = {
   basic: 'Basic',
