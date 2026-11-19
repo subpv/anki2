@@ -17,6 +17,10 @@ const app = Fastify({ logger: { level: process.env.LOG_LEVEL || 'info' }, trustP
 await app.register(cookie);
 await app.register(multipart, { limits: { fileSize: 200 * 1024 * 1024, files: 1 } });
 
+/** Feedback form shown in a panel (like write.maidev.dk). Empty turns the button off. */
+export const FEEDBACK_URL = (process.env.FEEDBACK_URL ?? 'https://feedback.maidev.dk/').trim();
+const feedbackOrigin = (() => { try { return FEEDBACK_URL ? new URL(FEEDBACK_URL).origin : ''; } catch { return ''; } })();
+
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
@@ -28,7 +32,7 @@ const CSP = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "frame-src https://feedback.maidev.dk", // the feedback form
+  `frame-src ${feedbackOrigin || "'none'"}`, // the feedback form
   "frame-ancestors 'none'",
 ].join('; ');
 
@@ -42,7 +46,7 @@ app.addHook('onSend', async (_req, reply) => {
 });
 
 registerAuth(app);
-registerRoutes(app);
+registerRoutes(app, feedbackOrigin ? FEEDBACK_URL : '');
 
 await app.register(fastifyStatic, { root: MEDIA_DIR, prefix: '/media/', decorateReply: false, maxAge: '30d', immutable: true });
 

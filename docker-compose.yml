@@ -18,6 +18,8 @@ services:
       OIDC_CLIENT_SECRET: "CHANGE-ME" # CHANGE
       # Study days roll over at 04:00 in this time zone.
       TZ: "Europe/Copenhagen"
+      # Feedback form behind the Feedback button (like write). Leave empty to hide the button.
+      FEEDBACK_URL: "https://feedback.maidev.dk/"
     volumes:
       # A TrueNAS dataset for the database and uploaded images. Snapshot it for backups.
       - /mnt/wesn580-03-26/storage-share/card:/data

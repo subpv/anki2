@@ -20,7 +20,7 @@ import { Wiki } from './pages/Wiki.tsx';
 
 export interface Me {
   name: string; email: string; username: string | null; hasPassword: boolean;
-  loginMethod: 'oidc' | 'password' | 'dev'; language: 'de' | 'en';
+  loginMethod: 'oidc' | 'password' | 'dev'; language: 'de' | 'en'; feedbackUrl: string;
 }
 interface Ctx { courses: Course[] | null; refresh: () => Promise<void>; me: Me | null; reloadMe: () => Promise<void> }
 const AppCtx = createContext<Ctx>({ courses: null, refresh: async () => {}, me: null, reloadMe: async () => {} });
@@ -30,11 +30,11 @@ export const CourseDot = ({ course, size = 26 }: { course: { name: string; color
   <span className="dot" style={{ background: course.color, width: size, height: size }}>{course.name.slice(0, 1).toUpperCase()}</span>
 );
 
-export const FEEDBACK_URL = 'https://feedback.maidev.dk/';
 const versionLabel = () =>
   `v${__APP_VERSION__} · ${new Date(__BUILD_DATE__).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
-function Feedback({ open, setOpen, showButton }: { open: boolean; setOpen: (o: boolean) => void; showButton: boolean }) {
+function Feedback({ url, open, setOpen, showButton }: { url: string; open: boolean; setOpen: (o: boolean) => void; showButton: boolean }) {
+  if (!url) return null;
   return (
     <>
       {showButton && <div className="feedback-fab">
@@ -48,9 +48,9 @@ function Feedback({ open, setOpen, showButton }: { open: boolean; setOpen: (o: b
               <h2>{t('Send feedback')}</h2>
               <button className="icon-btn" onClick={() => setOpen(false)} aria-label={t('Close')}><X size={18} /></button>
             </div>
-            <iframe src={FEEDBACK_URL} title={t('Send feedback')} />
+            <iframe src={url} title={t('Send feedback')} />
             <div className="feedback-foot">
-              {t('Form not showing?')} <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">{t('Open it in a new tab')}</a>
+              {t('Form not showing?')} <a href={url} target="_blank" rel="noopener noreferrer">{t('Open it in a new tab')}</a>
             </div>
           </div>
         </div>
@@ -158,7 +158,7 @@ function Shell() {
             ))}
             <button className="add" onClick={() => setNewCourse(true)}><Plus size={19} /> {t('New course')}</button>
             <div className="mobile-only side-extra">
-              <button className="add" onClick={() => { setSide(false); setFeedback(true); }}><MessageCircle size={19} /> {t('Feedback')}</button>
+              {me?.feedbackUrl && <button className="add" onClick={() => { setSide(false); setFeedback(true); }}><MessageCircle size={19} /> {t('Feedback')}</button>}
               <div className="version">{versionLabel()}</div>
             </div>
           </nav>
@@ -192,7 +192,7 @@ function Shell() {
             <button onClick={() => setSide(true)}><Menu size={21} /><span>{t('More')}</span></button>
           </nav>
         )}
-        <Feedback open={feedback} setOpen={setFeedback} showButton={!studying} />
+        <Feedback url={me?.feedbackUrl ?? ''} open={feedback} setOpen={setFeedback} showButton={!studying} />
       </div>
       {newCourse && (
         <CourseModal

@@ -163,7 +163,7 @@ function reviewsPerDay(userId: number, courseFilter: string, n: number, now: num
   return out;
 }
 
-export function registerRoutes(app: FastifyInstance) {
+export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
   app.addHook('onRequest', async (req, reply) => {
     if (req.url.startsWith('/api/') || req.url.startsWith('/media/')) return requireUser(req, reply);
   });
@@ -180,6 +180,7 @@ export function registerRoutes(app: FastifyInstance) {
     hasPassword: !!req.user.password_hash,
     loginMethod: req.sessionMethod,
     language: JSON.parse(req.user.settings || '{}').language === 'en' ? 'en' : 'de',
+    feedbackUrl,
   }));
 
   app.put('/api/me/language', async (req, reply) => {

@@ -61,6 +61,7 @@ test('changing the password needs the current one and ends other sessions', asyn
 test('security headers and rate limiting', async () => {
   const r = await fetch(srv.url + '/auth/config');
   assert.match(r.headers.get('content-security-policy') ?? '', /frame-ancestors 'none'/);
+  assert.match(r.headers.get('content-security-policy') ?? '', /frame-src https:\/\/feedback\.maidev\.dk;/);
   assert.equal(r.headers.get('x-frame-options'), 'DENY');
   jar.clear();
   let last = 0;

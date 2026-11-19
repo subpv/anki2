@@ -98,6 +98,7 @@ server in once with `sudo docker login git.maidev.dk` (a token with package: Rea
 | `APP_URL` | Public URL of the app, no trailing slash. Used for the login redirect and secure cookies. |
 | `OIDC_ISSUER` | Authentik issuer URL, e.g. `https://auth.example.com/application/o/card/`. Optional: without it, only password login. |
 | `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | From the Authentik provider. |
+| `FEEDBACK_URL` | Feedback form opened by the *Feedback* button (default `https://feedback.maidev.dk/`; empty hides the button). |
 | `TZ` | Time zone. A study day ends at 04:00 local time. |
 | `DATA_DIR` | Where the SQLite database and images live (`/data` in the image). |
 
