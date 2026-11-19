@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { evaluate } from 'mathjs';
-import { Check, Link2, TriangleAlert, X } from 'lucide-react';
-import type { Note, ParamData, OcclusionData, FormulaData, NumericData } from '../../../shared/types.ts';
+import { Check, Lightbulb, Link2, TriangleAlert, X } from 'lucide-react';
+import type { Note, ParamData, OcclusionData, FormulaData, NumericData, VocabData } from '../../../shared/types.ts';
 import { checkAnswer, fmtNum, type Verdict } from '../../../shared/units.ts';
 import { clozeSource, highlight, renderMd, renderTex } from '../md.ts';
 
@@ -15,6 +15,8 @@ const Tex = ({ src, display = true }: { src: string; display?: boolean }) => (
 export interface CardHandle {
   /** Called on Space/"Show answer". Returns true if the card handled it itself (e.g. revealed one more step). */
   advance(): boolean;
+  /** Show the hint, if the card has one. */
+  hint(): void;
 }
 
 interface Props {
@@ -94,6 +96,55 @@ function NumericCard({ question, expected, unit, tolerance, explanation, reveale
   );
 }
 
+const isImageUrl = (s: string) => /^(\/media\/|https?:\/\/)/.test(s);
+
+/** An emoji or an image, shown large. */
+export function Picture({ src, small = false }: { src: string; small?: boolean }) {
+  return isImageUrl(src)
+    ? <img className={`vocab-img ${small ? 'small' : ''}`} src={src} alt="" />
+    : <div className={`vocab-pic ${small ? 'small' : ''}`} aria-hidden>{src}</div>;
+}
+
+function Vocab({ d, ord, revealed, hint, onHint }: { d: VocabData; ord: string; revealed: boolean; hint: boolean; onHint: () => void }) {
+  const pic = d.picture?.trim();
+  const note = d.note && <Md src={d.note} className="vocab-note" />;
+  if (ord === 'w') {
+    return (
+      <div className="vocab">
+        <div className="card-kicker">What does it mean?</div>
+        <div className="vocab-word">{d.word}</div>
+        {revealed && (
+          <>
+            <hr className="card-sep" />
+            {pic && <Picture src={pic} small />}
+            <div className="vocab-answer">{d.meaning}</div>
+            {note}
+          </>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="vocab">
+      <div className="card-kicker">{pic ? 'What is this called?' : 'How do you say it?'}</div>
+      {pic ? <Picture src={pic} /> : <div className="vocab-word">{d.meaning}</div>}
+      {pic && !revealed && (
+        hint
+          ? <div className="vocab-hint">{d.meaning}</div>
+          : <button type="button" className="btn small hint-btn" onClick={onHint}><Lightbulb size={15} /> Hint <kbd>H</kbd></button>
+      )}
+      {revealed && (
+        <>
+          <hr className="card-sep" />
+          <div className="vocab-answer">{d.word}</div>
+          {pic && <div className="muted">{d.meaning}</div>}
+          {note}
+        </>
+      )}
+    </div>
+  );
+}
+
 function Occlusion({ data, ord, revealed }: { data: OcclusionData; ord: string; revealed: boolean }) {
   const target = ord.slice(2);
   return (
@@ -123,6 +174,12 @@ export const CardView = forwardRef<CardHandle, Props>(function CardView(
 ) {
   const d = note.data;
   const [step, setStep] = useState(1);
+  const [hint, setHint] = useState(false);
+  const showHint = () => {
+    if (hint || revealed || note.type !== 'vocab' || !note.data.picture) return;
+    setHint(true);
+    onSuggest?.(2); // needing the hint counts as Hard
+  };
   const scope = useMemo(() => (note.type === 'param' ? rollParams(d) : {}), [note.type, d]);
 
   useImperativeHandle(ref, () => ({
@@ -133,7 +190,8 @@ export const CardView = forwardRef<CardHandle, Props>(function CardView(
       }
       return false;
     },
-  }), [note.type, revealed, step, d]);
+    hint: showHint,
+  }), [note.type, revealed, step, d, hint]);
 
   const body = (() => {
     switch (note.type) {
@@ -232,6 +290,8 @@ export const CardView = forwardRef<CardHandle, Props>(function CardView(
           </>
         );
       }
+      case 'vocab':
+        return <Vocab d={d} ord={ord} revealed={revealed} hint={hint} onHint={showHint} />;
       case 'occlusion':
         return <Occlusion data={d} ord={ord} revealed={revealed} />;
     }

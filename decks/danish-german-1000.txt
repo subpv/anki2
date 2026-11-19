@@ -1,0 +1,1009 @@
+# title: Danish → German: the 1000 most important words
+# description: The most frequent Danish words plus everyday essentials (numbers, food, home, body, animals), in order of importance. Nouns come with en/et and the German article; notes give plurals, verb forms and usage. Common words have a picture with a hint button.
+# course: Danish
+#
+# Word order is based on the lemma frequency list of Det Danske Sprog- og Litteraturselskab
+# (DSL, https://dsl.dk, "De hyppigste ord i dansk", korpus.dsl.dk), used under DSL's open
+# licence. Translations, notes and pictures were written for this app.
+#
+# Format: word | meaning | picture | note
+i | in; seit (Zeit) |  | i dag = heute; i går = gestern; i to år = seit zwei Jahren
+at være | sein |  | er – var – været
+og | und |  | ausgesprochen meist wie „o“
+en / et | ein / eine (Artikel); eins |  | en hund (utrum), et hus (neutrum)
+den / det | der/die/das; es |  | den (utrum), det (neutrum); det regner = es regnet
+på | auf; an |  | på bordet = auf dem Tisch; på mandag = am Montag
+til | zu; nach; für |  | til København = nach Kopenhagen
+af | von; aus |  | lavet af træ = aus Holz gemacht
+at | zu (vor Infinitiv); dass |  | jeg håber at … = ich hoffe, dass …
+at have | haben |  | har – havde – haft
+for | für; denn |  | for sjov = zum Spaß
+der | da, dort; der/die/das (Relativ) |  | der er = es gibt
+med | mit |  | 
+som | wie; als; der/die/das (Relativ) |  | manden som bor her = der Mann, der hier wohnt
+ikke | nicht |  | 
+at kunne | können |  | kan – kunne – kunnet
+at blive | werden; bleiben |  | bliver – blev – blevet
+han | er |  | Objekt: ham
+om | über; um; ob |  | om morgenen = morgens; jeg ved ikke om … = ich weiß nicht, ob …
+men | aber |  | 
+jeg | ich |  | Objekt: mig
+vi | wir |  | Objekt: os
+fra | von; aus |  | jeg er fra Tyskland
+de | sie (Plural) |  | Objekt: dem; De = Sie (sehr förmlich, selten)
+at skulle | sollen; müssen; werden (Zukunft) |  | skal – skulle – skullet; jeg skal hjem = ich muss nach Hause
+man | man |  | 
+meget | sehr; viel |  | meget godt = sehr gut
+så | so; dann; also |  | og så = und dann
+sig | sich |  | 
+at ville | wollen; werden |  | vil – ville – villet
+at få | bekommen; kriegen |  | får – fik – fået
+at sige | sagen |  | siger – sagde – sagt
+et år | das Jahr |  | Pl. år; i år = dieses Jahr
+også | auch |  | 
+anden / andet / andre | anderer/andere/anderes; zweiter |  | en anden dag = ein anderer Tag
+god | gut | 👍 | godt (neutrum), gode (Plural)
+nogen / noget / nogle | jemand; etwas; einige |  | er der nogen? = ist da jemand?; noget vand = etwas Wasser
+stor | groß |  | større – størst
+ved | bei; an |  | ved bordet = am Tisch; ved siden af = neben
+hvor | wo; wie (sehr) |  | hvor bor du? = wo wohnst du?; hvor gammel? = wie alt?
+sin / sit / sine | sein/ihr (eigenes, reflexiv) |  | han tager sin jakke = er nimmt seine (eigene) Jacke
+at komme | kommen |  | kommer – kom – kommet
+hun | sie (Singular) |  | Objekt: hende
+eller | oder |  | 
+al / alt / alle | all; alles; alle |  | alle sammen = alle zusammen; alt = alles
+ud | hinaus, raus |  | gå ud = rausgehen; ude = draußen
+efter | nach; hinter |  | efter skole = nach der Schule
+hel | ganz |  | helt = ganz (Adverb); hele dagen = den ganzen Tag
+ny | neu |  | nyt (neutrum), nye (Plural)
+nu | jetzt |  | 
+at gå | gehen | 🚶 | går – gik – gået
+at gøre | tun, machen |  | gør – gjorde – gjort
+at se | sehen | 👀 | ser – så – set
+dansk | dänisch; Dänisch | 🇩🇰 | 
+over | über |  | 
+når | wenn (zeitlich, wiederholt) |  | når jeg kommer hjem = wenn ich nach Hause komme
+op | hinauf, rauf |  | stå op = aufstehen; oppe = oben
+denne / dette / disse | dieser/diese/dieses |  | 
+mange | viele |  | mange tak = vielen Dank
+en dag | der Tag |  | Pl. dage; god dag = guten Tag
+hej | hallo, hi | 👋 | hej hej = tschüss
+tak | danke | 🙏 | mange tak = vielen Dank; tak for mad = danke fürs Essen
+undskyld | Entschuldigung |  | undskyld, hvad sagde du? = Entschuldigung, was hast du gesagt?
+farvel | auf Wiedersehen, tschüss |  | 
+ja | ja |  | 
+nej | nein |  | 
+velkommen | willkommen |  | 
+skål | prost | 🥂 | en skål = eine Schüssel
+i dag | heute |  | 
+i går | gestern |  | 
+i morgen | morgen |  | om morgenen = morgens
+mig | mich, mir |  | 
+dig | dich, dir |  | 
+ham | ihn, ihm |  | 
+hende | sie, ihr (Objekt) |  | 
+os | uns |  | 
+dem | sie, ihnen (Objekt Plural) |  | 
+I | ihr (Plural) |  | Objekt: jer
+din / dit / dine | dein |  | 
+jeres | euer |  | 
+hvem | wer |  | 
+hvilken / hvilket / hvilke | welcher/welche/welches |  | 
+hvornår | wann |  | 
+nul | null | 0️⃣ | 
+to | zwei | 2️⃣ | ≠ til (nach/zu)
+tre | drei | 3️⃣ | 
+fire | vier | 4️⃣ | 
+fem | fünf | 5️⃣ | 
+seks | sechs | 6️⃣ | 
+syv | sieben | 7️⃣ | 
+otte | acht | 8️⃣ | 
+ni | neun | 9️⃣ | 
+ti | zehn | 🔟 | 
+elleve | elf |  | 
+tolv | zwölf |  | 
+tyve | zwanzig |  | 21 = enogtyve (eins-und-zwanzig)
+tredive | dreißig |  | 
+fyrre | vierzig |  | 
+halvtreds | fünfzig |  | (halb drei × 20) – kurz: halvtreds
+tres | sechzig |  | (3 × 20)
+halvfjerds | siebzig |  | (halb vier × 20)
+firs | achtzig |  | (4 × 20)
+halvfems | neunzig |  | (halb fünf × 20)
+hundrede | hundert | 💯 | et hundrede = einhundert
+tusind | tausend |  | et tusind = eintausend
+hvis | wenn, falls |  | 
+da | als (Vergangenheit); da (damals) |  | da jeg var barn = als ich Kind war
+at tage | nehmen |  | tager – tog – taget; tage bussen = den Bus nehmen
+her | hier |  | 
+deres | ihr (Plural, Besitz) |  | 
+en krone | die Krone (Währung) | 🪙 | Pl. kroner; 1 krone = 100 øre
+en gang | das Mal; der Gang (Flur) |  | en gang til = noch einmal; to gange = zweimal
+en tid | die Zeit | ⏳ | har du tid? = hast du Zeit?
+mod | gegen; nach (Richtung) |  | mod nord = nach Norden
+at give | geben |  | giver – gav – givet
+at finde | finden |  | finder – fandt – fundet
+at måtte | dürfen; müssen |  | må – måtte – måttet; må jeg? = darf ich?
+end | als (Vergleich) |  | større end = größer als
+hvad | was |  | 
+kun | nur |  | 
+du | du |  | Objekt: dig
+ind | hinein, rein |  | gå ind = reingehen; inde = drinnen
+at stå | stehen | 🧍 | står – stod – stået
+blandt | unter, zwischen (mehreren) |  | 
+lang | lang |  | længere – længst
+under | unter; während |  | under mødet = während des Treffens
+første | erster/erste/erstes | 🥇 | 
+et sted | der Ort, die Stelle | 📍 | Pl. steder; et eller andet sted = irgendwo
+et land | das Land |  | Pl. lande; på landet = auf dem Land
+hans | sein (von ihm) |  | 
+selv | selbst; sogar |  | 
+et barn | das Kind | 🧒 | Pl. børn (!)
+fordi | weil |  | 
+sen | spät |  | sent = spät (Adverb); for sent = zu spät
+derfor | deshalb |  | 
+sammen | zusammen |  | 
+lige | gerade; gleich; genau |  | lige nu = gerade jetzt; lige meget = egal
+jo | ja, doch (Füllwort) |  | det er jo rigtigt = das stimmt ja
+mellem | zwischen |  | 
+en mand | der Mann; der Ehemann | 👨 | Pl. mænd (!)
+sidste | letzter/letzte/letztes |  | 
+ingen / intet | kein; niemand; nichts |  | ingen ved det = niemand weiß es
+tidlig | früh |  | tidligt = früh (Adverb)
+at bruge | benutzen, brauchen (verwenden) |  | bruge penge = Geld ausgeben
+en del | der Teil; ziemlich viel | 🧩 | en del af = ein Teil von
+at vise | zeigen |  | 
+at sætte | setzen, stellen |  | sætter – satte – sat
+at holde | halten |  | holder – holdt – holdt; holde ferie = Urlaub machen
+samme | gleich, derselbe |  | den samme = derselbe
+lidt | ein bisschen, wenig | 🤏 | 
+hver / hvert | jeder/jede/jedes |  | hver dag = jeden Tag
+både … og | sowohl … als auch |  | 
+lille | klein |  | Plural: små (!)
+at mene | meinen |  | meinen im Sinne von Meinung haben
+gammel | alt | 👴 | gammelt (neutrum), gamle (Plural); ældre – ældst
+at skrive | schreiben | ✍️ | skriver – skrev – skrevet
+dog | jedoch, doch |  | 
+mens | während (Konjunktion) |  | 
+en kommune | die Gemeinde, die Kommune |  | 
+nok | genug; wohl, wahrscheinlich |  | det er nok rigtigt = das stimmt wohl
+bare | nur, bloß |  | bare rolig = keine Sorge
+høj | hoch; laut; groß (Person) |  | højt = laut
+at ligge | liegen |  | ligger – lå – ligget
+et menneske | der Mensch | 🧑 | Pl. mennesker
+hos | bei (Person) |  | hos lægen = beim Arzt
+tilbage | zurück | ↩️ | 
+igen | wieder |  | 
+at ske | geschehen, passieren |  | hvad skete der? = was ist passiert?
+siden | seit; seitdem |  | for to år siden = vor zwei Jahren
+et eksempel | das Beispiel |  | Pl. eksempler; for eksempel (fx) = zum Beispiel
+et minut | die Minute |  | Pl. minutter
+en verden | die Welt | 🌍 | 
+en regering | die Regierung |  | 
+frem | vorwärts, nach vorn |  | 
+en sag | die Sache; der Fall |  | Pl. sager
+hvordan | wie |  | hvordan har du det? = wie geht es dir?
+at spille | spielen | 🎮 | spille fodbold, spille klaver
+at tale | sprechen, reden | 🗣️ | taler dansk? = sprichst du Dänisch?
+at lave | machen |  | lave mad = kochen
+måske | vielleicht | 🤷 | 
+egen / eget / egne | eigen |  | 
+folk | Leute; das Volk |  | mange folk = viele Leute
+uden | ohne |  | 
+at vide | wissen |  | ved – vidste – vidst (!)
+ung | jung |  | yngre – yngst
+vores | unser |  | 
+sådan | so; solch |  | sådan en = so einer
+endnu | noch |  | endnu ikke = noch nicht
+en side | die Seite | 📄 | 
+en by | die Stadt | 🏙️ | i byen = in der Stadt; gå i byen = ausgehen
+en vej | der Weg; die Straße | 🛣️ | Pl. veje
+ned | hinunter, runter | ⬇️ | nede = unten
+at fortælle | erzählen |  | fortæller – fortalte – fortalt
+ifølge | laut, gemäß |  | 
+en uge | die Woche |  | om ugen = pro Woche
+et problem | das Problem |  | Pl. problemer
+en kamp | der Kampf; das Spiel (Sport) | 🥊 | 
+en kvinde | die Frau | 👩 | Ehefrau = kone
+omkring | um … herum; ungefähr |  | 
+et liv | das Leben |  | Pl. liv
+rigtig | richtig; echt, wirklich | ✅ | rigtig godt = echt gut
+penge | das Geld | 💰 | nur Plural: pengene
+klar | klar; bereit, fertig |  | er du klar? = bist du bereit?
+at tro | glauben |  | jeg tror det = ich glaube schon
+politisk | politisch |  | 
+en måde | die Art, die Weise |  | på den måde = auf diese Weise
+stadig | immer noch |  | 
+et forhold | das Verhältnis; die Beziehung |  | 
+en virksomhed | das Unternehmen, die Firma |  | 
+at arbejde | arbeiten | 👷 | 
+først | zuerst; erst |  | 
+gennem | durch |  | 
+at lægge | legen |  | lægger – lagde – lagt
+en mulighed | die Möglichkeit |  | 
+at begynde | beginnen, anfangen |  | 
+en grund | der Grund; das Grundstück |  | på grund af = wegen
+et arbejde | die Arbeit | 💼 | på arbejde = bei der Arbeit
+at lade | lassen |  | lader – lod – ladet
+allerede | schon, bereits |  | 
+at skabe | schaffen, erschaffen |  | 
+et område | das Gebiet, der Bereich |  | 
+en bog | das Buch | 📖 | Pl. bøger (!)
+samtidig | gleichzeitig |  | 
+at vælge | wählen |  | vælger – valgte – valgt
+at køre | fahren |  | køre bil = Auto fahren
+en måned | der Monat |  | Pl. måneder
+at sidde | sitzen |  | sidder – sad – siddet
+et politi | die Polizei | 👮 | politiet = die Polizei
+svær | schwer, schwierig |  | 
+at følge | folgen |  | følger – fulgte – fulgt
+gerne | gern |  | jeg vil gerne have … = ich hätte gern …
+en række | die Reihe |  | 
+altså | also |  | 
+vigtig | wichtig | ❗ | 
+aldrig | nie |  | 
+en familie | die Familie | 👨‍👩‍👧 | 
+amerikansk | amerikanisch | 🇺🇸 | 
+en skole | die Schule | 🏫 | 
+en historie | die Geschichte | 📜 | 
+et par | das Paar; ein paar |  | et par dage = ein paar Tage
+altid | immer |  | 
+at betyde | bedeuten |  | hvad betyder det? = was bedeutet das?
+en plads | der Platz |  | 
+netop | genau, eben |  | 
+forskellig | verschieden |  | 
+at kende | kennen |  | kendte – kendt
+at høre | hören |  | 
+at slå | schlagen |  | slår – slog – slået
+at tænke | denken | 🤔 | tænkte – tænkt
+at møde | treffen | 🤝 | 
+min / mit / mine | mein |  | 
+en million | die Million |  | Pl. millioner
+en ting | das Ding, die Sache |  | Pl. ting
+en film | der Film | 🎬 | Pl. film
+hendes | ihr (von ihr) |  | 
+et parti | die Partei |  | 
+en klokke | die Glocke | 🔔 | klokken er tre = es ist drei Uhr
+næste | nächster/nächste/nächstes |  | 
+at sende | senden, schicken | 📤 | 
+en pris | der Preis | 🏷️ | 
+få | wenige |  | få mennesker = wenige Menschen (≠ at få)
+at synes | finden, meinen |  | synes – syntes – syntes; jeg synes, det er godt = ich finde, es ist gut
+at vinde | gewinnen | 🏆 | vinder – vandt – vundet
+at samle | sammeln |  | 
+nemlig | nämlich |  | 
+at falde | fallen |  | falder – faldt – faldet
+en bil | das Auto | 🚗 | 
+at burde | sollen (Ratschlag) |  | bør – burde – burdet; du bør … = du solltest …
+et hus | das Haus | 🏠 | Pl. huse
+mulig | möglich |  | 
+et medlem | das Mitglied |  | Pl. medlemmer
+særlig | besonders |  | 
+hurtig | schnell |  | 
+et spørgsmål | die Frage | ❓ | Pl. spørgsmål
+rundt | herum, rund |  | 
+inden | bevor; innerhalb |  | inden for = innerhalb
+stærk | stark | 💪 | 
+at handle | handeln; einkaufen | 🛒 | handle ind = einkaufen
+alt | alles |  | 
+at købe | kaufen | 🛍️ | købte – købt
+økonomisk | wirtschaftlich |  | 
+en dansker | der Däne, die Dänin |  | Pl. danskere
+at kalde | rufen; nennen |  | 
+at leve | leben |  | 
+et hold | die Mannschaft, das Team |  | Pl. hold
+en gruppe | die Gruppe | 👥 | 
+cirka | ungefähr, circa |  | 
+næsten | fast |  | 
+at nå | erreichen, schaffen |  | nåede – nået; nå toget = den Zug erreichen
+en aften | der Abend | 🌆 | Pl. aftener; i aften = heute Abend
+enkelt | einfach; einzeln |  | 
+at lyde | klingen |  | lyder – lød – lydt; det lyder godt = das klingt gut
+at ønske | wünschen |  | 
+et navn | der Name | 📛 | Pl. navne
+at stige | steigen | 📈 | stiger – steg – steget
+at betale | bezahlen | 💳 | 
+ellers | sonst |  | 
+heller ikke | auch nicht |  | 
+især | besonders, vor allem |  | 
+et mål | das Ziel; das Tor (Sport) | 🎯 | Pl. mål
+blot | bloß, nur |  | 
+et selskab | die Gesellschaft; die Firma |  | 
+faktisk | eigentlich, tatsächlich |  | 
+ofte | oft |  | 
+videre | weiter |  | 
+et billede | das Bild | 📷 | Pl. billeder
+et ord | das Wort | 🔤 | Pl. ord
+en lov | das Gesetz | ⚖️ | 
+et fald | der Fall; der Sturz |  | i hvert fald = jedenfalls
+en person | die Person |  | 
+at forsøge | versuchen |  | 
+at vente | warten |  | 
+kort | kurz |  | et kort = die Karte
+offentlig | öffentlich |  | 
+en politiker | der Politiker |  | 
+international | international |  | 
+at føre | führen |  | 
+at stille | stellen |  | stille et spørgsmål = eine Frage stellen
+at læse | lesen; studieren |  | læse til ingeniør = Ingenieur studieren
+bag | hinter |  | 
+at gælde | gelten |  | gælder – gjaldt – gjaldt
+en time | die Stunde (60 min; Unterricht) |  | ≠ Zeit (= tid)
+en forbindelse | die Verbindung | 🔗 | i forbindelse med = im Zusammenhang mit
+en form | die Form |  | i god form = gut in Form
+nær | nah |  | 
+at trække | ziehen |  | trækker – trak – trukket
+alligevel | trotzdem |  | 
+at forklare | erklären |  | 
+en udvikling | die Entwicklung |  | 
+at sikre | sichern, sicherstellen |  | 
+hvorfor | warum |  | 
+tysk | deutsch; Deutsch | 🇩🇪 | 
+en leder | der Leiter, die Führungskraft |  | 
+en grad | der Grad |  | i høj grad = in hohem Maße
+et løb | der Lauf, das Rennen |  | Pl. løb
+fast | fest; fest angestellt |  | 
+før | vor; bevor; früher |  | før i tiden = früher
+at opleve | erleben |  | 
+en bank | die Bank (Geld) | 🏦 | eine Sitzbank = en bænk
+et resultat | das Ergebnis |  | 
+tæt | dicht; eng; nah |  | 
+at føle | fühlen |  | føler – følte – følt
+hård | hart |  | 
+at bo | wohnen |  | hvor bor du? = wo wohnst du?
+et samfund | die Gesellschaft (Volk) |  | Pl. samfund
+et tal | die Zahl | 🔢 | Pl. tal
+eneste | einzig |  | den eneste = der/die einzige
+at hjælpe | helfen | 🆘 | hjælper – hjalp – hjulpet
+et projekt | das Projekt |  | 
+at forstå | verstehen |  | forstår – forstod – forstået
+sikker | sicher |  | 
+et universitet | die Universität | 🎓 | 
+ganske | ganz, ziemlich |  | 
+at spørge | fragen | 🙋 | spørger – spurgte – spurgt
+at svare | antworten |  | 
+en klub | der Verein, der Klub |  | 
+at fortsætte | fortsetzen, weitermachen |  | fortsætter – fortsatte – fortsat
+en situation | die Situation |  | 
+et valg | die Wahl | 🗳️ | Pl. valg
+en plan | der Plan | 📋 | 
+selvfølgelig | selbstverständlich, natürlich |  | 
+en hånd | die Hand | ✋ | Pl. hænder (!)
+dårlig | schlecht | 👎 | 
+fri | frei |  | have fri = frei haben
+at flytte | umziehen; bewegen | 📦 | 
+et møde | das Treffen, die Besprechung |  | Pl. møder
+en opgave | die Aufgabe | 📝 | 
+en slags | eine Art, eine Sorte |  | hvilken slags? = welche Sorte?
+en avis | die Zeitung | 📰 | 
+at ændre | ändern |  | 
+en forælder | der Elternteil |  | Pl. forældre = die Eltern
+ekstra | extra, zusätzlich |  | 
+en ret | das Recht; das Gericht (Essen) |  | have ret = recht haben
+at bygge | bauen | 🏗️ | 
+social | sozial |  | 
+at vende | wenden, drehen |  | 
+at ramme | treffen (Ziel) |  | 
+begge | beide |  | 
+alene | allein |  | 
+lokal | lokal, örtlich |  | 
+en aftale | die Vereinbarung, der Termin |  | det er en aftale = abgemacht
+en kirke | die Kirche | ⛪ | 
+en elev | der Schüler |  | 
+væk | weg, fort |  | 
+at udvikle | entwickeln |  | 
+en undersøgelse | die Untersuchung, die Studie |  | 
+et øje | das Auge | 👁️ | Pl. øjne (!)
+en fremtid | die Zukunft |  | i fremtiden = in Zukunft
+en far | der Vater | 👨‍👧 | Pl. fædre
+længe | lange |  | hvor længe? = wie lange?
+imod | gegen |  | 
+et tilfælde | der Fall; der Zufall |  | i så fald = in dem Fall; tilfældigvis = zufällig
+at fylde | füllen; werden (Geburtstag) |  | jeg fylder 25 = ich werde 25
+en krig | der Krieg |  | 
+fuld | voll; betrunken |  | 
+en borger | der Bürger |  | 
+at åbne | öffnen | 🔓 | 
+ren | sauber, rein | 🧼 | 
+en musik | die Musik | 🎵 | meist ohne Artikel: musik
+privat | privat |  | 
+igennem | durch |  | 
+en mor | die Mutter | 👩‍👧 | Pl. mødre
+at lære | lernen; lehren |  | lærte – lært
+en morgen | der Morgen | 🌄 | i morgen = morgen; i morges = heute Morgen
+at ende | enden |  | 
+en tekst | der Text |  | 
+ligesom | so wie, genauso wie |  | 
+at rejse | reisen | 🧳 | rejse sig = aufstehen
+et forslag | der Vorschlag |  | Pl. forslag
+en kilometer | der Kilometer |  | 
+at koste | kosten |  | hvad koster det? = was kostet das?
+at ligne | ähneln |  | du ligner din mor = du siehst deiner Mutter ähnlich
+europæisk | europäisch | 🇪🇺 | 
+søndag | der Sonntag |  | Wochentage klein geschrieben
+at mangle | fehlen |  | 
+at hedde | heißen |  | hedder – hed – heddet; hvad hedder du? = wie heißt du?
+en pige | das Mädchen | 👧 | 
+et marked | der Markt |  | 
+at prøve | versuchen; anprobieren |  | 
+at lukke | schließen, zumachen |  | 
+en masse | eine Menge |  | en masse mennesker = viele Menschen
+en uddannelse | die Ausbildung, das Studium |  | 
+en kunde | der Kunde |  | 
+direkte | direkt |  | 
+hinanden | einander |  | med hinanden = miteinander
+et nummer | die Nummer | #️⃣ | Pl. numre
+lav | niedrig |  | lavt = leise; ≠ at lave (machen)
+at starte | starten, anfangen |  | 
+åben | offen |  | åbent (neutrum)
+hjem | nach Hause |  | hjemme = zu Hause
+at deltage | teilnehmen |  | deltager – deltog – deltaget
+en ven | der Freund |  | Pl. venner; en kæreste = fester Freund/Freundin
+hen | hin |  | hvor skal du hen? = wohin gehst du?
+slet ikke | gar nicht |  | 
+at søge | suchen; sich bewerben | 🔍 | søge et job = sich auf einen Job bewerben
+lørdag | der Samstag |  | 
+en rolle | die Rolle |  | 
+halv | halb | 🌓 | klokken halv tre = halb drei (14:30)
+et vand | das Wasser | 💧 | 
+en hjælp | die Hilfe |  | 
+et spil | das Spiel | 🎲 | Pl. spil
+en meter | der Meter | 📏 | 
+vel | wohl; doch |  | det er vel okay? = das ist doch okay?
+en økonomi | die Wirtschaft; die Finanzen |  | 
+fin | fein, schön |  | 
+at sælge | verkaufen |  | sælger – solgte – solgt
+ad | entlang; über |  | ad vejen = den Weg entlang
+fredag | der Freitag |  | 
+en interesse | das Interesse |  | 
+at virke | wirken; funktionieren |  | det virker ikke = es funktioniert nicht
+et job | der Job |  | Pl. job
+et tidspunkt | der Zeitpunkt |  | 
+hvid | weiß | ⚪ | 
+almindelig | normal, gewöhnlich |  | 
+at løbe | laufen, rennen | 🏃‍♂️ | løber – løb – løbet
+en politik | die Politik |  | 
+et tv | der Fernseher; das Fernsehen | 📺 | 
+at vokse | wachsen | 🌱 | 
+at føde | gebären |  | født = geboren
+en sæson | die Saison |  | 
+at bringe | bringen |  | bringer – bragte – bragt
+at håbe | hoffen | 🤞 | 
+en forfatter | der Autor |  | 
+sort | schwarz | ⚫ | 
+at modtage | empfangen, erhalten |  | modtager – modtog – modtaget
+at lykkes | gelingen |  | det lykkedes = es ist gelungen
+et ansvar | die Verantwortung |  | 
+en tur | der Ausflug, die Fahrt, die Runde |  | tage en tur = einen Ausflug machen; din tur = du bist dran
+et øjeblik | der Augenblick, der Moment |  | et øjeblik! = einen Moment!
+et system | das System |  | 
+nødvendig | notwendig |  | 
+grøn | grün | 🟢 | 
+glad | froh, glücklich | 😊 | glad for = froh über; ≠ glatt
+januar | der Januar |  | Monate klein geschrieben
+en løsning | die Lösung |  | 
+en tale | die Rede |  | 
+at miste | verlieren |  | ≠ at tabe (ein Spiel verlieren)
+fransk | französisch; Französisch | 🇫🇷 | 
+rød | rot | 🔴 | 
+en søn | der Sohn |  | Pl. sønner
+at bestå | bestehen |  | bestå en eksamen = eine Prüfung bestehen
+et stykke | das Stück |  | et stykke kage = ein Stück Kuchen
+en beslutning | die Entscheidung |  | 
+fælles | gemeinsam |  | 
+at dø | sterben |  | dør – døde – død
+positiv | positiv |  | 
+en grænse | die Grenze |  | 
+at skylde | schulden |  | 
+en virkelighed | die Wirklichkeit |  | 
+at passe | passen; aufpassen |  | passe på = aufpassen; det passer = das stimmt
+alvorlig | ernst |  | 
+en spiller | der Spieler |  | 
+en sommer | der Sommer | 🌞 | om sommeren = im Sommer
+mandag | der Montag |  | 
+maj | der Mai |  | 
+en tvivl | der Zweifel |  | 
+en baggrund | der Hintergrund |  | 
+at bryde | brechen |  | bryder – brød – brudt
+torsdag | der Donnerstag |  | 
+en dreng | der Junge | 👦 | 
+længere | länger; weiter |  | 
+dyb | tief |  | 
+et svar | die Antwort |  | Pl. svar
+en død | der Tod | 💀 | død = tot (Adjektiv)
+en sejr | der Sieg |  | 
+et teater | das Theater | 🎭 | Pl. teatre
+september | der September |  | 
+per | pro |  | 
+en læge | der Arzt, die Ärztin | 🧑‍⚕️ | 
+personlig | persönlich |  | 
+at hænge | hängen |  | hænger – hang – hængt
+at beslutte | beschließen, entscheiden |  | 
+virkelig | wirklich |  | 
+foran | vor (Ort) |  | foran huset = vor dem Haus
+enig | einig |  | jeg er enig = ich stimme zu
+at huske | sich erinnern; daran denken |  | husk at … = denk daran, …
+at tabe | verlieren (Spiel; fallen lassen) |  | 
+en lejlighed | die Wohnung; die Gelegenheit |  | 
+et museum | das Museum | 🏛️ | Pl. museer
+et program | das Programm |  | 
+en start | der Start |  | 
+marts | der März |  | 
+onsdag | der Mittwoch |  | 
+normal | normal |  | 
+at bede | bitten; beten |  | beder – bad – bedt
+en mening | die Meinung; der Sinn |  | 
+et folketing | das dänische Parlament |  | Folketinget
+en skat | die Steuer; der Schatz |  | min skat = mein Schatz
+svensk | schwedisch; Schwedisch | 🇸🇪 | 
+en stemme | die Stimme |  | 
+en artikel | der Artikel |  | 
+et råd | der Rat (Ratschlag); der Rat (Gremium) |  | 
+slem | schlimm; böse |  | 
+november | der November |  | 
+en professor | der Professor |  | 
+et forsøg | der Versuch | 🧪 | Pl. forsøg
+at dele | teilen |  | 
+at skifte | wechseln |  | 
+hverken … eller | weder … noch |  | 
+at støtte | unterstützen |  | 
+et hoved | der Kopf |  | Pl. hoveder
+et lys | das Licht | 💡 | tænde lyset = das Licht anmachen
+at regne | rechnen; regnen |  | det regner = es regnet
+dengang | damals |  | 
+en forening | der Verein |  | 
+at forlade | verlassen |  | forlader – forlod – forladt
+at nævne | nennen, erwähnen |  | 
+december | der Dezember |  | 
+en patient | der Patient |  | 
+en værdi | der Wert |  | 
+en serie | die Serie |  | 
+juni | der Juni |  | 
+inde | drinnen |  | 
+et firma | die Firma |  | Pl. firmaer
+tirsdag | der Dienstag |  | 
+naturligvis | natürlich |  | 
+en vis | ein gewisser |  | en vis grad = ein gewisses Maß
+april | der April |  | 
+trods | trotz |  | på trods af = trotz
+en forskel | der Unterschied |  | 
+oktober | der Oktober |  | 
+et hjem | das Zuhause, das Heim | 🏡 | 
+egentlig | eigentlich |  | 
+at klare | schaffen, bewältigen |  | klare sig = zurechtkommen
+afgørende | entscheidend |  | 
+en nat | die Nacht | 🌃 | Pl. nætter; godnat = gute Nacht
+at kigge | gucken, schauen |  | ≠ at se (sehen)
+at fungere | funktionieren |  | 
+at mærke | merken, spüren |  | 
+en jord | die Erde; der Boden |  | 
+smuk | schön |  | 
+en oplysning | die Auskunft, die Information | ℹ️ | 
+en journalist | der Journalist |  | 
+at hente | holen, abholen |  | 
+et udtryk | der Ausdruck |  | 
+en minister | der Minister |  | 
+en scene | die Bühne; die Szene |  | 
+en ende | das Ende |  | 
+en kunst | die Kunst | 🖼️ | 
+en milliard | die Milliarde |  | 
+engang | einmal (früher, später) |  | engang i fremtiden = irgendwann
+en klasse | die Klasse |  | 
+en mad | das Essen | 🍽️ | lave mad = kochen
+pludselig | plötzlich |  | 
+midt | mitten |  | midt i = mitten in
+snart | bald |  | vi ses snart = bis bald
+at stoppe | stoppen, aufhören | 🛑 | 
+moderne | modern |  | 
+en behandling | die Behandlung |  | 
+en kultur | die Kultur |  | 
+at levere | liefern | 🚚 | 
+at pege | zeigen (mit dem Finger) | 👉 | 
+dyr | teuer | 💸 | et dyr = das Tier
+at beskrive | beschreiben |  | beskriver – beskrev – beskrevet
+en succes | der Erfolg |  | 
+en betydning | die Bedeutung |  | 
+at bære | tragen |  | bærer – bar – båret
+en kritik | die Kritik |  | 
+indtil | bis |  | 
+russisk | russisch; Russisch | 🇷🇺 | 
+en chef | der Chef |  | 
+en pause | die Pause |  | 
+en butik | der Laden, das Geschäft | 🏪 | 
+sidst | zuletzt |  | 
+et blad | das Blatt; die Zeitschrift | 🍃 | 
+aktiv | aktiv |  | 
+en fodbold | der Fußball | ⚽ | 
+et bord | der Tisch |  | Pl. borde
+en oplevelse | das Erlebnis |  | 
+nødt til | gezwungen, müssen |  | jeg er nødt til at gå = ich muss gehen
+en begyndelse | der Anfang |  | 
+en sang | das Lied | 🎶 | 
+en statsminister | der Ministerpräsident (Dänemark) |  | 
+let | leicht |  | 
+at undgå | vermeiden |  | undgår – undgik – undgået
+en bygning | das Gebäude | 🏢 | 
+en datter | die Tochter |  | Pl. døtre (!)
+en post | die Post; der Posten | 📮 | 
+en natur | die Natur | 🏞️ | 
+en gæst | der Gast |  | 
+engelsk | englisch; Englisch | 🇬🇧 | 
+februar | der Februar |  | 
+hjemme | zu Hause |  | 
+selvom | obwohl |  | 
+en erfaring | die Erfahrung |  | 
+en risiko | das Risiko | ⚠️ | 
+august | der August |  | 
+en fejl | der Fehler | ❌ | Pl. fejl
+en dør | die Tür | 🚪 | Pl. døre
+en kunstner | der Künstler | 🧑‍🎨 | 
+en chance | die Chance |  | 
+at lide | leiden |  | kunne lide = mögen (!): jeg kan lide kaffe
+at bestemme | bestimmen, entscheiden |  | 
+nem | leicht, einfach |  | 
+en støtte | die Unterstützung |  | 
+et sprog | die Sprache |  | Pl. sprog
+at dræbe | töten |  | 
+en telefon | das Telefon | 📞 | en mobil = das Handy
+daglig | täglich |  | 
+at løse | lösen |  | 
+et ønske | der Wunsch |  | Pl. ønsker
+en soldat | der Soldat | 💂 | 
+speciel | speziell, besonders |  | 
+en fordel | der Vorteil |  | 
+at forsvinde | verschwinden |  | forsvinder – forsvandt – forsvundet
+en idé | die Idee |  | Pl. idéer
+en gade | die Straße |  | Pl. gader
+at besøge | besuchen |  | 
+at tilbyde | anbieten |  | tilbyder – tilbød – tilbudt
+at spise | essen | 🍴 | spiser – spiste – spist
+juli | der Juli |  | 
+at tjene | verdienen; dienen |  | tjene penge = Geld verdienen
+en udfordring | die Herausforderung |  | 
+at lede | leiten; suchen |  | lede efter = suchen nach
+et besøg | der Besuch |  | 
+venstre | links | ⬅️ | til venstre = nach links
+at træde | treten |  | træder – trådte – trådt
+at undersøge | untersuchen |  | 
+at kæmpe | kämpfen |  | 
+endelig | endlich |  | 
+en forsker | der Forscher | 🔬 | 
+en sygdom | die Krankheit |  | 
+voksen | erwachsen |  | en voksen = ein Erwachsener
+historisk | historisch |  | 
+en krop | der Körper |  | 
+flot | schön, toll |  | 
+at dreje | drehen |  | 
+et dyr | das Tier | 🦁 | Pl. dyr; dyr = teuer
+en holdning | die Einstellung, die Haltung |  | 
+anderledes | anders |  | 
+en adgang | der Zugang, der Zutritt |  | 
+at kaste | werfen |  | 
+helst | am liebsten |  | jeg vil helst … = ich möchte am liebsten …
+en kontakt | der Kontakt |  | 
+at opstå | entstehen |  | opstår – opstod – opstået
+at opnå | erreichen |  | 
+billig | billig |  | 
+at tilføje | hinzufügen |  | 
+et produkt | das Produkt |  | 
+en titel | der Titel |  | 
+derimod | dagegen |  | 
+at slutte | enden, beenden |  | 
+en lyst | die Lust |  | har du lyst til …? = hast du Lust auf …?
+at stemme | abstimmen, wählen |  | 
+formentlig | vermutlich |  | 
+knap | knapp, kaum |  | 
+at slippe | loslassen; davonkommen |  | slipper – slap – sluppet
+en kollega | der Kollege |  | Pl. kolleger
+desværre | leider | 😕 | 
+en roman | der Roman |  | 
+at glæde sig | sich freuen |  | jeg glæder mig til … = ich freue mich auf …
+en koncert | das Konzert |  | 
+en bolig | die Wohnung, die Unterkunft |  | 
+at rette | korrigieren, richten |  | 
+et center | das Zentrum |  | Pl. centre
+et fængsel | das Gefängnis |  | 
+en kvalitet | die Qualität |  | 
+central | zentral |  | 
+at elske | lieben | 😍 | 
+en aktivitet | die Aktivität |  | 
+en top | die Spitze, der Gipfel |  | 
+at synge | singen |  | synger – sang – sunget
+vild | wild |  | 
+efterhånden | allmählich, mit der Zeit |  | 
+bred | breit |  | 
+national | national |  | 
+sjælden | selten |  | 
+at danne | bilden |  | 
+en konkurrence | der Wettbewerb, die Konkurrenz |  | 
+at overraske | überraschen |  | 
+årlig | jährlich |  | 
+at eje | besitzen |  | 
+at behandle | behandeln |  | 
+et hensyn | die Rücksicht |  | tage hensyn til = Rücksicht nehmen auf
+tydelig | deutlich |  | 
+en type | der Typ, die Art |  | 
+en skyld | die Schuld |  | det er min skyld = das ist meine Schuld
+en kilde | die Quelle |  | 
+oprindelig | ursprünglich |  | 
+et publikum | das Publikum |  | 
+en forklaring | die Erklärung |  | 
+en rejse | die Reise |  | 
+en weekend | das Wochenende |  | 
+en stjerne | der Stern | ⭐ | 
+at præsentere | präsentieren, vorstellen |  | 
+at interessere sig for | sich interessieren für |  | 
+kendt | bekannt |  | 
+overhovedet | überhaupt |  | 
+en halvdel | die Hälfte |  | 
+en produktion | die Produktion | 🏭 | 
+en tanke | der Gedanke | 💭 | 
+en viden | das Wissen |  | 
+at fjerne | entfernen |  | 
+kraftig | kräftig, stark |  | 
+spændende | spannend |  | 
+at optage | aufnehmen |  | 
+et rum | der Raum, das Zimmer |  | 
+en hovedstad | die Hauptstadt |  | 
+en styrke | die Stärke |  | 
+forkert | falsch |  | 
+en retning | die Richtung | 🧭 | 
+at dække | decken, bedecken |  | 
+at ringe | anrufen; klingeln | 📲 | jeg ringer til dig = ich rufe dich an
+et tilbud | das Angebot |  | 
+at skære | schneiden |  | skærer – skar – skåret
+et forår | der Frühling | 🌷 | om foråret = im Frühling
+en skuespiller | der Schauspieler |  | 
+naturlig | natürlich |  | 
+en herre | der Herr |  | 
+at træne | trainieren | 🏋️ | 
+at sørge for | sorgen für |  | 
+en sikkerhed | die Sicherheit |  | 
+interessant | interessant |  | 
+en slutning | der Schluss, das Ende |  | 
+en kone | die Ehefrau | 👰 | 
+en alder | das Alter |  | 
+en skade | der Schaden; die Verletzung | 🩹 | det er synd = schade
+færdig | fertig |  | 
+et miljø | die Umwelt; das Umfeld | ♻️ | 
+et efterår | der Herbst | 🍂 | om efteråret = im Herbst
+et emne | das Thema |  | 
+nylig | neulich, vor kurzem |  | for nylig = vor kurzem
+norsk | norwegisch; Norwegisch | 🇳🇴 | 
+en information | die Information |  | 
+typisk | typisch |  | 
+et ben | das Bein; der Knochen | 🦵 | Pl. ben
+at udtale | aussprechen; äußern |  | en udtale = die Aussprache
+at overveje | überlegen |  | 
+at tvinge | zwingen |  | tvinger – tvang – tvunget
+død | tot |  | 
+at love | versprechen |  | love = versprechen; ≠ Liebe (kærlighed)
+en sammenhæng | der Zusammenhang |  | 
+at tegne | zeichnen | ✏️ | 
+udenlandsk | ausländisch |  | 
+enorm | enorm, riesig |  | 
+et stof | der Stoff |  | 
+varm | warm | 🥵 | 
+et behov | der Bedarf, das Bedürfnis |  | 
+at nyde | genießen |  | nyder – nød – nydt
+at indeholde | enthalten |  | 
+at spare | sparen | 🐷 | 
+en energi | die Energie | 🔋 | 
+klassisk | klassisch |  | 
+fantastisk | fantastisch |  | 
+officiel | offiziell |  | 
+populær | beliebt, populär |  | 
+at ryge | rauchen | 🚬 | ryger – røg – røget
+fysisk | körperlich, physisch |  | 
+teknisk | technisch | ⚙️ | 
+en følelse | das Gefühl |  | 
+en konflikt | der Konflikt |  | 
+at foreslå | vorschlagen |  | foreslår – foreslog – foreslået
+en dommer | der Richter; der Schiedsrichter |  | 
+fuldstændig | vollständig, völlig |  | 
+en forskning | die Forschung |  | 
+sjov | lustig; Spaß | 🤪 | det var sjovt = das hat Spaß gemacht
+en forretning | das Geschäft |  | 
+en restaurant | das Restaurant |  | 
+en evne | die Fähigkeit |  | 
+blå | blau | 🔵 | 
+et udland | das Ausland |  | i udlandet = im Ausland
+at diskutere | diskutieren |  | 
+et brev | der Brief | ✉️ | 
+endda | sogar |  | 
+et træ | der Baum; das Holz | 🌳 | Pl. træer
+en studerende | der Student, die Studentin | 🧑‍🎓 | Pl. studerende
+en ekspert | der Experte |  | 
+gal | verrückt; falsch |  | hvad er der galt? = was ist los?
+en gud | der Gott |  | 
+en luft | die Luft | 🌬️ | 
+en arbejdsplads | der Arbeitsplatz |  | 
+et tag | das Dach |  | ≠ en dag (Tag)
+et studie | das Studium; die Studie |  | 
+en generation | die Generation |  | 
+en advokat | der Anwalt |  | 
+en kærlighed | die Liebe | ❤️ | 
+et hjerte | das Herz | 🫀 | 
+en ø | die Insel | 🏝️ | Pl. øer
+en udsigt | die Aussicht |  | 
+en ejer | der Besitzer |  | 
+en diskussion | die Diskussion |  | 
+at behøve | brauchen (müssen) |  | du behøver ikke = du musst nicht
+forbi | vorbei |  | 
+ond | böse | 😈 | 
+en kontrol | die Kontrolle |  | 
+gratis | kostenlos | 🆓 | 
+en have | der Garten | 🌻 | ≠ at have (haben)
+at gribe | greifen, fangen |  | griber – greb – grebet
+at lande | landen | 🛬 | 
+at styre | steuern, lenken |  | 
+at forestille sig | sich vorstellen |  | 
+en vare | die Ware |  | 
+et fly | das Flugzeug | ✈️ | Pl. fly
+et sygehus | das Krankenhaus | 🏥 | auch: et hospital
+at ride | reiten | 🏇 | rider – red – redet
+pæn | hübsch, ordentlich |  | 
+at bevæge sig | sich bewegen |  | 
+en ændring | die Änderung |  | 
+effektiv | effektiv |  | 
+at blande | mischen |  | 
+frivillig | freiwillig |  | 
+en eftermiddag | der Nachmittag |  | i eftermiddag = heute Nachmittag
+en karakter | die Note (Schule); der Charakter |  | 12 ist die beste Note in DK
+en linje | die Linie |  | 
+en vin | der Wein | 🍷 | 
+nogensinde | jemals |  | 
+en havn | der Hafen | ⚓ | 
+en farve | die Farbe | 🌈 | 
+kold | kalt | 🥶 | 
+en station | der Bahnhof; die Station | 🚉 | 
+tung | schwer (Gewicht) |  | ≠ svær (schwierig)
+en drøm | der Traum |  | 
+en sport | der Sport |  | 
+en lærer | der Lehrer | 🧑‍🏫 | 
+at turde | sich trauen |  | tør – turde – turdet
+en hjemmeside | die Webseite | 💻 | 
+et skib | das Schiff | 🚢 | 
+at ødelægge | zerstören, kaputt machen |  | ødelægger – ødelagde – ødelagt
+et foto | das Foto |  | 
+at tillade | erlauben |  | 
+at smide | werfen; wegwerfen |  | smide ud = wegwerfen
+en jul | Weihnachten | 🎄 | glædelig jul = frohe Weihnachten
+et hotel | das Hotel | 🏨 | 
+at bevare | bewahren, behalten |  | 
+et ansigt | das Gesicht | 😐 | 
+at risikere | riskieren |  | 
+at minde om | erinnern an |  | 
+et vejr | das Wetter | 🌦️ | 
+at sammenligne | vergleichen |  | 
+en glæde | die Freude |  | 
+gift | verheiratet | 💍 | ≠ Gift (= gift)
+en hund | der Hund | 🐕 | Pl. hunde
+en hverdag | der Alltag; der Werktag |  | 
+farlig | gefährlich |  | 
+utrolig | unglaublich |  | 
+rig | reich | 🤑 | 
+en frihed | die Freiheit |  | 
+tilfreds | zufrieden |  | 
+et hav | das Meer | 🌊 | 
+at redde | retten |  | 
+et bibliotek | die Bibliothek | 📚 | 
+et skridt | der Schritt | 👣 | 
+en undervisning | der Unterricht |  | 
+en fest | die Feier, die Party | 🎉 | 
+bange | ängstlich | 😨 | være bange for = Angst haben vor
+en nyhed | die Neuigkeit, die Nachricht |  | 
+en løn | der Lohn, das Gehalt |  | 
+svag | schwach |  | 
+at flyve | fliegen |  | flyver – fløj – fløjet
+en fod | der Fuß | 🦶 | Pl. fødder (!)
+at snakke | reden, quatschen | 💬 | 
+at dukke op | auftauchen |  | 
+et brød | das Brot | 🍞 | rugbrød = Roggenbrot
+en mælk | die Milch | 🥛 | meist ohne Artikel: mælk
+en kaffe | der Kaffee | ☕ | 
+en te | der Tee | 🍵 | 
+en øl | das Bier | 🍺 | Pl. øl
+et æble | der Apfel | 🍎 | Pl. æbler
+en ost | der Käse | 🧀 | 
+et kød | das Fleisch | 🥩 | 
+en fisk | der Fisch | 🐟 | Pl. fisk
+et æg | das Ei | 🥚 | Pl. æg
+en kartoffel | die Kartoffel | 🥔 | Pl. kartofler
+et sukker | der Zucker |  | 
+et salt | das Salz | 🧂 | 
+en kage | der Kuchen | 🍰 | 
+en morgenmad | das Frühstück | 🥐 | 
+en frokost | das Mittagessen | 🥪 | 
+en aftensmad | das Abendessen | 🍝 | 
+en arm | der Arm |  | 
+en mund | der Mund | 👄 | 
+en næse | die Nase | 👃 | 
+et øre | das Ohr | 👂 | Pl. ører
+et hår | das Haar | 💇 | Pl. hår
+en mave | der Bauch, der Magen |  | 
+en tand | der Zahn | 🦷 | Pl. tænder (!)
+en finger | der Finger | ☝️ | Pl. fingre
+en ryg | der Rücken |  | 
+en stol | der Stuhl | 🪑 | 
+en seng | das Bett | 🛏️ | 
+et vindue | das Fenster | 🪟 | Pl. vinduer
+et køkken | die Küche | 🍳 | 
+en nøgle | der Schlüssel | 🔑 | 
+en lampe | die Lampe |  | 
+et værelse | das Zimmer |  | Pl. værelser
+et toilet | die Toilette | 🚽 | 
+en kop | die Tasse |  | 
+en tallerken | der Teller |  | 
+en kniv | das Messer | 🔪 | 
+en gaffel | die Gabel |  | Pl. gafler
+en ske | der Löffel | 🥄 | 
+en bror | der Bruder |  | Pl. brødre (!)
+en søster | die Schwester |  | Pl. søstre
+en kæreste | der Freund / die Freundin (Partner) | 💑 | 
+en kat | die Katze | 🐈 | Pl. katte
+en hest | das Pferd | 🐎 | 
+en fugl | der Vogel | 🐦 | 
+en ko | die Kuh | 🐄 | Pl. køer
+en gris | das Schwein | 🐖 | 
+en cykel | das Fahrrad | 🚲 | Pl. cykler
+at cykle | Fahrrad fahren | 🚴 | 
+et tog | der Zug | 🚆 | Pl. tog
+en bus | der Bus | 🚌 | Pl. busser
+en båd | das Boot | ⛵ | 
+en sol | die Sonne | ☀️ | 
+en måne | der Mond | 🌕 | 
+en regn | der Regen | ☔ | 
+en sne | der Schnee | ❄️ | 
+en vind | der Wind | 💨 | 
+en blomst | die Blume | 🌸 | 
+en skov | der Wald | 🌲 | 
+en strand | der Strand | 🏖️ | 
+en sø | der See | 🛶 | ≠ et hav (Meer)
+en himmel | der Himmel | 🌌 | 
+et bjerg | der Berg | ⛰️ | Dänemark hat keine echten Berge
+et tøj | die Kleidung | 👕 | nur Singular: tøjet
+en sko | der Schuh | 👟 | Pl. sko
+en jakke | die Jacke | 🧥 | 
+en taske | die Tasche | 👜 | 
+en computer | der Computer | 🖥️ | 
+et kort | die Karte; die Landkarte | 🗺️ | 
+en billet | die Fahrkarte, das Ticket | 🎫 | 
+et ur | die Uhr | ⌚ | 
+en gave | das Geschenk | 🎁 | 
+en is | das Eis | 🍦 | 
+en vinter | der Winter | ⛄ | 
+gul | gelb | 🟡 | 
+brun | braun | 🟤 | 
+grå | grau |  | 
+orange | orange | 🟠 | 
+lyserød | rosa |  | 
+sulten | hungrig |  | jeg er sulten = ich habe Hunger
+tørstig | durstig |  | 
+træt | müde | 🥱 | 
+syg | krank | 🤒 | 
+dejlig | schön, herrlich |  | 
+hyggelig | gemütlich | 🕯️ | hygge = Gemütlichkeit
+lækker | lecker; hübsch | 😋 | 
+sød | süß; nett | 🍬 | 
+ked af det | traurig | 😢 | 
+kedelig | langweilig | 😑 | 
+højre | rechts | ➡️ | til højre = nach rechts
+at drikke | trinken | 🥤 | drikker – drak – drukket
+at sove | schlafen | 😴 | sover – sov – sovet
+at vågne | aufwachen | ⏰ | 
+at vaske | waschen | 🧽 | 
+at lege | spielen (Kinder) | 🧸 | ≠ at spille (Spiel, Instrument)
+at smile | lächeln | 🙂 | 
+at grine | lachen | 😂 | 
+at græde | weinen | 😭 | græder – græd – grædt
+at svømme | schwimmen | 🏊 | 
+at danse | tanzen | 💃 | 
+at glemme | vergessen |  | glemte – glemt
+at lytte | zuhören | 🎧 | lytte til musik = Musik hören
+at tælle | zählen |  | tæller – talte – talt
+at kunne lide | mögen |  | jeg kan godt lide … = ich mag …
+at studere | studieren |  | 
+en eksamen | die Prüfung |  | Pl. eksamener
+en forelæsning | die Vorlesung |  | 
+en ingeniør | der Ingenieur |  | 

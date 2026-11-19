@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ChartNoAxesColumn, House, Layers, LogOut, Menu, Moon, Plus, Search, Settings as Cog, Sun } from 'lucide-react';
+import { ChartNoAxesColumn, Download, House, Layers, LogOut, Menu, Moon, Plus, Search, Settings as Cog, Sun } from 'lucide-react';
 import type { Course } from '../../shared/types.ts';
 import { api } from './api.ts';
 import { Home } from './pages/Home.tsx';
@@ -78,6 +78,7 @@ export function App() {
             <NavLink to="/" end><House size={19} /> Home</NavLink>
             <NavLink to="/browse"><Search size={19} /> Browse</NavLink>
             <NavLink to="/stats"><ChartNoAxesColumn size={19} /> Stats</NavLink>
+            <NavLink to="/import"><Download size={19} /> Import</NavLink>
             <NavLink to="/settings"><Cog size={19} /> Settings</NavLink>
             <div className="nav-label">Courses</div>
             {courses?.map((c) => (
@@ -102,7 +103,8 @@ export function App() {
             <Route path="/review/:courseId" element={<Review mode="review" />} />
             <Route path="/cram/:courseId" element={<Review mode="cram" />} />
             <Route path="/stats" element={<Stats />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings" element={<SettingsPage key="settings" />} />
+            <Route path="/import" element={<SettingsPage key="import" section="import" />} />
             <Route path="*" element={<div className="page"><h1>Not found</h1><p className="sub"><Link to="/">Back to Home</Link></p></div>} />
           </Routes>
         </main>

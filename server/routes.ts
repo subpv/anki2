@@ -10,6 +10,7 @@ import {
 } from './scheduler.ts';
 import { createNote, rowToNote, updateNote, validateNote, type NoteInput } from './notes.ts';
 import { importApkg } from './apkg.ts';
+import { importWords, listDecks, loadDeck, parseWordList } from './decks.ts';
 import { MIN_REVIEWS, optimizeParameters } from './optimize.ts';
 import type { Settings } from '../shared/types.ts';
 
@@ -39,16 +40,23 @@ function newRemaining(userId: number, c: CourseRow, now: number): number {
   return Math.max(0, c.new_per_day - done.n);
 }
 
+/**
+ * Like Anki, a card whose sibling (another card of the same note) was studied today waits until
+ * tomorrow, so e.g. both directions of a vocabulary word are not asked on the same day.
+ */
+const NOT_BURIED = `NOT EXISTS (SELECT 1 FROM cards s JOIN revlog r ON r.card_id = s.id
+                    WHERE s.note_id = c.note_id AND s.id != c.id AND r.review >= :today)`;
+
 function courseCounts(userId: number, c: CourseRow, now: number) {
   const r = db
     .prepare(
       `SELECT COUNT(*) AS total,
-              SUM(state = 0 AND suspended = 0) AS new,
-              SUM(state IN (1, 3) AND suspended = 0 AND due <= :end) AS learning,
-              SUM(state = 2 AND suspended = 0 AND due <= :end) AS due
-       FROM cards WHERE user_id = :u AND course_id = :c`,
+              SUM(c.state = 0 AND c.suspended = 0 AND ${NOT_BURIED}) AS new,
+              SUM(c.state IN (1, 3) AND c.suspended = 0 AND c.due <= :end) AS learning,
+              SUM(c.state = 2 AND c.suspended = 0 AND c.due <= :end AND ${NOT_BURIED}) AS due
+       FROM cards c WHERE c.user_id = :u AND c.course_id = :c`,
     )
-    .get({ u: userId, c: c.id, end: dayEnd(now) }) as any;
+    .get({ u: userId, c: c.id, end: dayEnd(now), today: dayStart(now) }) as any;
   return {
     total: r.total ?? 0,
     new: Math.min(r.new ?? 0, newRemaining(userId, c, now)),
@@ -68,7 +76,8 @@ function nextCard(userId: number, courses: CourseRow[], now: number): CardRow | 
   if (!courses.length) return null;
   const ids = courses.map((c) => c.id).join(',');
   const base = `SELECT c.*, n.type FROM cards c JOIN notes n ON n.id = c.note_id
-                WHERE c.user_id = ? AND c.suspended = 0 AND c.course_id IN (${ids})`;
+                WHERE c.user_id = :u AND c.suspended = 0 AND c.course_id IN (${ids})`;
+  const today = dayStart(now);
   const last = db
     .prepare(
       `SELECT c.note_id, c.course_id, n.type FROM revlog r JOIN cards c ON c.id = r.card_id JOIN notes n ON n.id = c.note_id
@@ -91,10 +100,12 @@ function nextCard(userId: number, courses: CourseRow[], now: number): CardRow | 
     return best;
   };
 
-  const learning = db.prepare(`${base} AND c.state IN (1, 3) AND c.due <= ? ORDER BY c.due LIMIT 5`).all(userId, now) as Candidate[];
+  const learning = db.prepare(`${base} AND c.state IN (1, 3) AND c.due <= :t ORDER BY c.due LIMIT 5`).all({ u: userId, t: now }) as Candidate[];
   if (learning.length) return pick(learning, 0);
 
-  const reviews = db.prepare(`${base} AND c.state = 2 AND c.due <= ? ORDER BY c.due LIMIT 60`).all(userId, dayEnd(now)) as Candidate[];
+  const reviews = db
+    .prepare(`${base} AND c.state = 2 AND c.due <= :t AND ${NOT_BURIED} ORDER BY c.due LIMIT 60`)
+    .all({ u: userId, t: dayEnd(now), today }) as Candidate[];
   // New cards are introduced in order within a course: one candidate per course, skipping siblings of the last note.
   const fresh: Candidate[] = [];
   let newLeft = 0;
@@ -104,9 +115,10 @@ function nextCard(userId: number, courses: CourseRow[], now: number): CardRow | 
     const rows = db
       .prepare(
         `SELECT c.*, n.type FROM cards c JOIN notes n ON n.id = c.note_id
-         WHERE c.user_id = ? AND c.suspended = 0 AND c.course_id = ? AND c.state = 0 ORDER BY c.note_id, c.id LIMIT 8`,
+         WHERE c.user_id = :u AND c.suspended = 0 AND c.course_id = :c AND c.state = 0 AND ${NOT_BURIED}
+         ORDER BY c.note_id, c.id LIMIT 8`,
       )
-      .all(userId, c.id) as Candidate[];
+      .all({ u: userId, c: c.id, today }) as Candidate[];
     if (!rows.length) continue;
     fresh.push(rows.find((r) => r.note_id !== last?.note_id) ?? rows[0]);
     newLeft += Math.min(remaining, rows.length);
@@ -119,7 +131,7 @@ function nextCard(userId: number, courses: CourseRow[], now: number): CardRow | 
   if (fresh.length) return pick(fresh, 0);
 
   // Nothing else left: bring forward learning steps that are due later today.
-  const ahead = db.prepare(`${base} AND c.state IN (1, 3) AND c.due <= ? ORDER BY c.due LIMIT 5`).all(userId, dayEnd(now)) as Candidate[];
+  const ahead = db.prepare(`${base} AND c.state IN (1, 3) AND c.due <= :t ORDER BY c.due LIMIT 5`).all({ u: userId, t: dayEnd(now) }) as Candidate[];
   return pick(ahead, 0);
 }
 
@@ -472,6 +484,34 @@ export function registerRoutes(app: FastifyInstance) {
     const name = crypto.randomBytes(12).toString('hex') + ext;
     fs.writeFileSync(path.join(MEDIA_DIR, name), await file.toBuffer());
     return { url: `/media/${name}` };
+  });
+
+  app.get('/api/decks', async () => listDecks());
+
+  /** Add a ready-made deck. Without a course id it goes into a course named after the deck (created if needed). */
+  app.post('/api/decks/:id/import', async (req, reply) => {
+    const deck = loadDeck((req.params as any).id);
+    if (!deck) return reply.code(404).send({ error: 'Deck not found' });
+    let courseId = Number((req.body as any)?.courseId) || 0;
+    if (courseId) {
+      if (!userCourses(req.user.id, courseId).length) return reply.code(400).send({ error: 'Pick a course' });
+    } else {
+      const existing = db.prepare('SELECT id FROM courses WHERE user_id = ? AND name = ?').get(req.user.id, deck.course) as { id: number } | undefined;
+      courseId = existing?.id ?? Number(
+        db.prepare('INSERT INTO courses (user_id, name, color, new_per_day) VALUES (?, ?, ?, 20)').run(req.user.id, deck.course, '#c8102e').lastInsertRowid,
+      );
+    }
+    return { courseId, ...importWords(req.user.id, courseId, deck.entries) };
+  });
+
+  app.post('/api/import/words', async (req, reply) => {
+    const courseId = Number((req.query as any).course);
+    if (!userCourses(req.user.id, courseId).length) return reply.code(400).send({ error: 'Pick a course to import into' });
+    const file = await req.file();
+    if (!file) return reply.code(400).send({ error: 'No file' });
+    const list = parseWordList((await file.toBuffer()).toString('utf8'));
+    if (!list.entries.length) return reply.code(400).send({ error: 'No words found. Each line needs a word and its meaning, separated by a tab, | or ;' });
+    return { courseId, skipped: list.skipped, ...importWords(req.user.id, courseId, list.entries) };
   });
 
   app.post('/api/import/apkg', async (req, reply) => {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-  Braces, Calculator, Dices, ImagePlus, Image as ImageIcon, ListOrdered, Plus, Sigma, SquareStack, TextCursorInput, Trash2,
+  Languages, Braces, Calculator, Dices, ImagePlus, Image as ImageIcon, ListOrdered, Plus, Sigma, SquareStack, TextCursorInput, Trash2,
 } from 'lucide-react';
 import { cardOrds, NOTE_TYPE_LABELS, type Note, type NoteType } from '../../../shared/types.ts';
 import { fmtNum } from '../../../shared/units.ts';
@@ -14,7 +14,7 @@ import { LANGUAGES } from '../md.ts';
 const ICONS: Record<NoteType, React.ReactNode> = {
   basic: <SquareStack size={20} />, cloze: <TextCursorInput size={20} />, numeric: <Calculator size={20} />,
   param: <Dices size={20} />, formula: <Sigma size={20} />, code: <Braces size={20} />,
-  derivation: <ListOrdered size={20} />, occlusion: <ImageIcon size={20} />,
+  derivation: <ListOrdered size={20} />, occlusion: <ImageIcon size={20} />, vocab: <Languages size={20} />,
 };
 
 const newId = () => Math.random().toString(36).slice(2, 8);
@@ -28,6 +28,7 @@ const BLANK: Record<NoteType, () => any> = {
   code: () => ({ prompt: '', language: 'c', code: '', explanation: '' }),
   derivation: () => ({ title: '', steps: ['', ''] }),
   occlusion: () => ({ image: '', title: '', rects: [] }),
+  vocab: () => ({ word: '', meaning: '', picture: '', note: '' }),
 };
 
 /** Drop rows the user left empty, so they do not turn into blank cards. */
@@ -45,7 +46,7 @@ function clean(type: NoteType, d: any): any {
 }
 
 const ORD_LABEL = (ord: string, i: number) =>
-  ord === 'f' ? 'Front → back' : ord === 'r' ? 'Back → front' : ord === 'recall' ? 'Recall formula'
+  ord === 'w' ? 'Word → meaning' : ord === 'm' ? 'Meaning → word' : ord === 'f' ? 'Front → back' : ord === 'r' ? 'Back → front' : ord === 'recall' ? 'Recall formula'
     : ord === 'symbols' ? 'Symbols' : ord.startsWith('r:') ? `Rearrangement ${i}` : `Card ${i + 1}`;
 
 /** Markdown textarea. Images can be pasted, dropped or picked; they upload and insert as ![](url). */
@@ -228,6 +229,27 @@ function Fields({ type, d, set }: { type: NoteType; d: any; set: (patch: any) =>
             </div>
           ))}
           <button type="button" className="btn small" style={{ marginBottom: 14 }} onClick={() => set({ steps: [...d.steps, ''] })}><Plus size={15} /> Step</button>
+        </>
+      );
+    case 'vocab':
+      return (
+        <>
+          <div className="row">
+            <Text label="Word (language you are learning)" value={d.word} onChange={(word) => set({ word })} placeholder="en hund" />
+            <Text label="Meaning (your language)" value={d.meaning} onChange={(meaning) => set({ meaning })} placeholder="der Hund" />
+          </div>
+          <div className="row">
+            <Text label="Picture: an emoji or image link (optional)" value={d.picture} onChange={(picture) => set({ picture })} placeholder="🐕" />
+            <label className="btn fit" style={{ marginBottom: 14 }} title="Upload an image as the picture">
+              <ImagePlus size={16} /> Upload
+              <input type="file" accept="image/*" hidden onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (f) { try { set({ picture: await uploadImage(f) }); } catch (err) { alert((err as Error).message); } }
+              }} />
+            </label>
+          </div>
+          <p className="hint" style={{ marginTop: -6, marginBottom: 14 }}>With a picture, the reverse card shows the picture and a hint button instead of the meaning. Best for things you can draw: nouns, colours, actions.</p>
+          <MdField label="Note: plural, forms, usage (optional)" value={d.note} rows={2} onChange={(note) => set({ note })} />
         </>
       );
     case 'occlusion':

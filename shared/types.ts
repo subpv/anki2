@@ -1,5 +1,5 @@
 export type NoteType =
-  | 'basic' | 'cloze' | 'numeric' | 'param' | 'formula' | 'code' | 'derivation' | 'occlusion';
+  | 'basic' | 'cloze' | 'numeric' | 'param' | 'formula' | 'code' | 'derivation' | 'occlusion' | 'vocab';
 
 export interface BasicData { front: string; back: string; reverse?: boolean }
 export interface ClozeData { text: string; extra?: string }
@@ -17,9 +17,14 @@ export interface CodeData { prompt: string; language: string; code: string; expl
 export interface DerivationData { title: string; steps: string[] }
 export interface OcclusionRect { id: string; x: number; y: number; w: number; h: number; label: string }
 export interface OcclusionData { image: string; title?: string; rects: OcclusionRect[] }
+/**
+ * A vocabulary word. `word` is in the language you learn, `meaning` in your own.
+ * `picture` is an emoji or an image URL; with a picture the reverse card shows it instead of the meaning.
+ */
+export interface VocabData { word: string; meaning: string; picture?: string; note?: string }
 
 export type NoteData =
-  | BasicData | ClozeData | NumericData | ParamData | FormulaData | CodeData | DerivationData | OcclusionData;
+  | BasicData | ClozeData | NumericData | ParamData | FormulaData | CodeData | DerivationData | OcclusionData | VocabData;
 
 export interface Note {
   id: number; courseId: number; type: NoteType; data: any; tags: string;
@@ -57,7 +62,7 @@ export interface Summary {
 
 /** Card types that need working out get more time on the answer timer. */
 export const TIMER_FACTOR: Record<NoteType, number> = {
-  basic: 1, cloze: 1, occlusion: 1, formula: 1.5, code: 3, numeric: 3, param: 4, derivation: 4,
+  basic: 1, cloze: 1, occlusion: 1, vocab: 1, formula: 1.5, code: 3, numeric: 3, param: 4, derivation: 4,
 };
 
 export const NOTE_TYPE_LABELS: Record<NoteType, string> = {
@@ -69,6 +74,7 @@ export const NOTE_TYPE_LABELS: Record<NoteType, string> = {
   code: 'Code',
   derivation: 'Derivation',
   occlusion: 'Image occlusion',
+  vocab: 'Vocabulary',
 };
 
 /** Indices of the cloze deletions in a text, e.g. "{{c2::x}} {{c1::y}}" -> [1, 2]. */
@@ -93,6 +99,8 @@ export function cardOrds(type: NoteType, data: any): string[] {
     case 'code': return ['c'];
     case 'derivation': return ['d'];
     case 'occlusion': return (data.rects ?? []).map((r: OcclusionRect) => `o:${r.id}`);
+    // w: word -> meaning, m: meaning (or picture) -> word
+    case 'vocab': return ['w', 'm'];
   }
 }
 
@@ -107,6 +115,7 @@ export function noteTitle(type: NoteType, data: any): string {
       case 'code': return data.prompt;
       case 'derivation': return data.title;
       case 'occlusion': return data.title || 'Image occlusion';
+      case 'vocab': return `${data.word ?? ''} — ${data.meaning ?? ''}`;
     }
   })() ?? '';
   const text = raw.replace(/<[^>]+>/g, ' ').replace(/!\[.*?\]\(.*?\)/g, '[image]').replace(/\s+/g, ' ').trim();
