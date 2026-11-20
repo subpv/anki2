@@ -139,7 +139,7 @@ export function parseNotesJson(text: string): ParsedJson {
         const rects = (Array.isArray(n.rects) ? n.rects : []).map((r: any) => ({
           id: str(r?.id) || id(), x: num(r?.x), y: num(r?.y), w: num(r?.w), h: num(r?.h), label: str(r?.label),
         }));
-        if (!rects.length || rects.some((r) => ![r.x, r.y, r.w, r.h].every((v) => Number.isFinite(v) && v >= 0 && v <= 1))) bad('not-list', 'rects');
+        if (!rects.length || rects.some((r) => ![r.x, r.y, r.w, r.h].every((v) => Number.isFinite(v) && v >= 0 && v <= 1) || r.w <= 0 || r.h <= 0 || r.x + r.w > 1.001 || r.y + r.h > 1.001)) bad('not-list', 'rects');
         data = { image: str(n.image), title: str(n.title), rects };
         break;
       }

@@ -12,6 +12,7 @@ import { createNote, rowToNote, updateNote, validateNote, type NoteInput } from 
 import { importApkg } from './apkg.ts';
 import { importWords, listDecks, loadDeck, parseWordList } from './decks.ts';
 import { parseNotesJson } from './textImport.ts';
+import { resolveImages } from './imageRefs.ts';
 import { MIN_REVIEWS, optimizeParameters } from './optimize.ts';
 import type { Settings } from '../shared/types.ts';
 
@@ -557,11 +558,13 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
    * JSON is all-or-nothing: with any problem, nothing is imported and every problem is listed.
    */
   app.post('/api/import/text', { bodyLimit: 20 * 1024 * 1024 }, async (req, reply) => {
-    const { text = '', courseId, newCourse = '' } = (req.body ?? {}) as { text?: string; courseId?: number; newCourse?: string };
+    const { text = '', courseId, newCourse = '', files = {} } = (req.body ?? {}) as { text?: string; courseId?: number; newCourse?: string; files?: Record<string, string> };
     const body = String(text).trim();
     if (!body) return reply.code(400).send({ error: 'Nothing to import' });
     const isJson = body.startsWith('{') || body.startsWith('[') || body.startsWith('```');
     const parsed = isJson ? parseNotesJson(body) : null;
+    let downloaded = 0;
+    if (parsed && !parsed.problems.length) downloaded = await resolveImages(parsed.notes, files, parsed.problems);
     if (parsed?.problems.length) return reply.code(400).send({ error: 'The import has problems', problems: parsed.problems.slice(0, 50), repaired: parsed.repaired });
     const words = isJson ? null : parseWordList(body);
     if (words && !words.entries.length) return reply.code(400).send({ error: 'No words found. Each line needs a word and its meaning, separated by a tab, | or ;' });
@@ -585,7 +588,7 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
         cards += (db.prepare('SELECT COUNT(*) AS n FROM cards WHERE note_id = ?').get(noteId) as { n: number }).n;
       }
     })();
-    return { kind: 'json', courseId: target, added: parsed!.notes.length, cards, repaired: parsed!.repaired };
+    return { kind: 'json', courseId: target, added: parsed!.notes.length, cards, repaired: parsed!.repaired, downloaded };
   });
 
   app.post('/api/import/words', async (req, reply) => {

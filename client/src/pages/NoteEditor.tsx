@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-  Languages, Braces, Calculator, Dices, ImagePlus, Image as ImageIcon, ListOrdered, Plus, Sigma, SquareStack, TextCursorInput, Trash2,
+  Bold, Italic, List, Languages, Braces, Calculator, Dices, ImagePlus, Image as ImageIcon, ListOrdered, Plus, Sigma, SquareStack, TextCursorInput, Trash2,
 } from 'lucide-react';
-import { cardOrds, NOTE_TYPE_LABELS, type Note, type NoteType } from '../../../shared/types.ts';
+import { ADVANCED_TYPES, cardOrds, NOTE_TYPE_HELP, NOTE_TYPE_LABELS, SIMPLE_TYPES, type Note, type NoteType } from '../../../shared/types.ts';
 import { fmtNum } from '../../../shared/units.ts';
 import { api, uploadImage } from '../api.ts';
 import { useApp } from '../App.tsx';
 import { CardView, evalFormula, rollParams } from '../components/CardView.tsx';
 import { OcclusionEditor } from '../components/OcclusionEditor.tsx';
+import { FormulaDialog, MathInput } from '../components/MathInput.tsx';
 import { LANGUAGES } from '../md.ts';
 import { t, tn, t as tr } from '../i18n.ts';
 
@@ -46,41 +47,139 @@ function clean(type: NoteType, d: any): any {
   return d;
 }
 
+function TypeButton({ k, on, pick }: { k: NoteType; on: boolean; pick: (k: NoteType) => void }) {
+  return (
+    <button type="button" className={`type-btn ${on ? 'on' : ''}`} onClick={() => pick(k)} aria-pressed={on}>
+      <span className="type-icon">{ICONS[k]}</span>
+      <span className="type-text">
+        <b>{t(NOTE_TYPE_LABELS[k])}</b>
+        <small>{t(NOTE_TYPE_HELP[k])}</small>
+      </span>
+    </button>
+  );
+}
+
 const ORD_LABEL = (ord: string, i: number) =>
   ord === 'w' ? t('Word → meaning') : ord === 'm' ? t('Meaning → word') : ord === 'f' ? t('Front → back') : ord === 'r' ? t('Back → front') : ord === 'recall' ? t('Recall formula')
     : ord === 'symbols' ? t('Symbols') : ord.startsWith('r:') ? t('Rearrangement {n}', { n: i }) : t('Card {n}', { n: i + 1 });
 
-/** Markdown textarea. Images can be pasted, dropped or picked; they upload and insert as ![](url). */
-function MdField({ label, value, onChange, rows = 4, placeholder, hint }: {
+/**
+ * Text field with a toolbar, so nothing has to be typed as code: bold, italic, list, formula
+ * (visual editor), picture (also paste or drop) and, for gap texts, "Make gap".
+ * The text is stored as Markdown with LaTeX; the preview shows the result.
+ */
+function MdField({ label, value, onChange, rows = 4, placeholder, hint, gap, chips }: {
   label: string; value: string; onChange: (v: string) => void; rows?: number; placeholder?: string; hint?: React.ReactNode;
+  /** Show a "Make gap" button that turns the selected text into a gap. */
+  gap?: boolean;
+  /** Extra buttons that insert a snippet at the cursor, e.g. variables of a calculation. */
+  chips?: { label: string; insert: string }[];
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
-  const insert = async (file: File) => {
+  const [gapTip, setGapTip] = useState(false);
+  const [formula, setFormula] = useState<{ a: number; b: number; latex: string; block: boolean } | null>(null);
+  const val = value ?? '';
+
+  const sel = () => { const el = ref.current!; return [el.selectionStart ?? val.length, el.selectionEnd ?? val.length] as const; };
+  const put = (next: string, cursor: number) => {
+    onChange(next);
+    requestAnimationFrame(() => { const el = ref.current; if (el) { el.focus(); el.setSelectionRange(cursor, cursor); } });
+  };
+  const replace = (a: number, b: number, text: string) => put(val.slice(0, a) + text + val.slice(b), a + text.length);
+  const wrap = (mark: string) => {
+    const [a, b] = sel();
+    const inner = val.slice(a, b) || t('text');
+    put(val.slice(0, a) + mark + inner + mark + val.slice(b), a + mark.length + inner.length + mark.length);
+  };
+  const list = () => {
+    const [a, b] = sel();
+    const start = val.lastIndexOf('\n', a - 1) + 1;
+    const lines = val.slice(start, b).split('\n').map((l) => (l.startsWith('- ') ? l : `- ${l}`)).join('\n');
+    replace(start, b, lines);
+  };
+  const insertImage = async (file: File) => {
     setBusy(true);
     try {
       const url = await uploadImage(file);
-      const el = ref.current!;
-      const at = el.selectionStart ?? value.length;
-      onChange(`${value.slice(0, at)}![](${url})${value.slice(el.selectionEnd ?? at)}`);
+      const [a, b] = sel();
+      replace(a, b, `![](${url})`);
     } catch (err) { alert((err as Error).message); }
     setBusy(false);
   };
+  const openFormula = () => {
+    const [a, b] = sel();
+    const m = val.slice(a, b).trim().match(/^(\$\$?)([\s\S]+?)\1$/);
+    setFormula({ a, b, latex: m ? m[2].trim() : '', block: m?.[1] === '$$' });
+  };
+  const makeGap = () => {
+    const [a, b] = sel();
+    const text = val.slice(a, b);
+    if (!text.trim()) { setGapTip(true); ref.current?.focus(); return; }
+    const n = Math.max(0, ...[...val.matchAll(/\{\{c(\d+)::/g)].map((m) => Number(m[1]))) + 1;
+    const lead = text.match(/^\s*/)![0], trail = text.match(/\s*$/)![0];
+    setGapTip(false);
+    replace(a, b, `${lead}{{c${n}::${text.trim()}}}${trail}`);
+  };
+  const keep = (e: React.MouseEvent) => e.preventDefault(); // keep the text selection when a button is pressed
+
   return (
     <div className={`field md-field ${drag ? 'drag' : ''}`} style={{ marginBottom: 14 }}>
       <span className="field-label">{t(label)}</span>
-      <textarea ref={ref} rows={rows} value={value ?? ''} placeholder={placeholder && t(placeholder)} onChange={(e) => onChange(e.target.value)}
-        onPaste={(e) => { const f = [...e.clipboardData.files].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); insert(f); } }}
-        onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-        onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) insert(f); }} />
-      <div className="md-tools">
-        {hint && <span className="hint" style={{ marginRight: 'auto' }}>{hint}</span>}
-        <label className="btn ghost small" title={t('Insert image (you can also paste or drop one)')}>
-          <ImagePlus size={15} /> {busy ? t('Uploading…') : t('Image')}
-          <input type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && insert(e.target.files[0])} />
+      <div className="md-toolbar" role="toolbar" aria-label={t('Formatting')}>
+        <button type="button" onMouseDown={keep} onClick={() => wrap('**')} title={t('Bold')} aria-label={t('Bold')}><Bold size={16} /></button>
+        <button type="button" onMouseDown={keep} onClick={() => wrap('*')} title={t('Italic')} aria-label={t('Italic')}><Italic size={16} /></button>
+        <button type="button" onMouseDown={keep} onClick={list} title={t('List')} aria-label={t('List')}><List size={16} /></button>
+        <button type="button" onMouseDown={keep} onClick={openFormula} title={t('Formula')}><Sigma size={16} /> <span>{t('Formula')}</span></button>
+        <label className="tb-btn" title={t('Insert image (you can also paste or drop one)')}>
+          <ImagePlus size={16} /> <span>{busy ? t('Uploading…') : t('Picture')}</span>
+          <input type="file" accept="image/*" hidden onChange={(e) => { if (e.target.files?.[0]) insertImage(e.target.files[0]); e.target.value = ''; }} />
         </label>
+        {gap && (
+          <button type="button" className="tb-gap" onMouseDown={keep} onClick={makeGap}><TextCursorInput size={16} /> <span>{t('Make gap')}</span></button>
+        )}
+        {chips?.map((c) => (
+          <button key={c.label} type="button" className="tb-chip" onMouseDown={keep} onClick={() => { const [a, b] = sel(); replace(a, b, c.insert); }}>
+            <Plus size={14} /> {c.label}
+          </button>
+        ))}
       </div>
+      <textarea ref={ref} rows={rows} value={val} placeholder={placeholder && t(placeholder)} onChange={(e) => onChange(e.target.value)}
+        onPaste={(e) => { const f = [...e.clipboardData.files].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); insertImage(f); } }}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) insertImage(f); }} />
+      {(hint || gapTip) && (
+        <p className="hint" style={{ margin: '4px 0 0' }}>{gapTip ? <b>{t('First select a word in the text, then tap “Make gap”.')}</b> : hint}</p>
+      )}
+      {formula && (
+        <FormulaDialog initial={formula.latex} initialBlock={formula.block} onClose={() => setFormula(null)}
+          onInsert={(latex, block) => { replace(formula.a, formula.b, block ? `\n$$${latex}$$\n` : `$${latex}$`); setFormula(null); }} />
+      )}
+    </div>
+  );
+}
+
+/** Answer formula of a calculation, built from buttons (variables, operators) or typed. */
+function FormulaBuilder({ value, onChange, vars }: { value: string; onChange: (v: string) => void; vars: string[] }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const insert = (s: string) => {
+    const el = ref.current!;
+    const a = el.selectionStart ?? value.length, b = el.selectionEnd ?? value.length;
+    const pad = /[+\-*/^]/.test(s) && s.length === 1 ? ` ${s} ` : s;
+    onChange(value.slice(0, a) + pad + value.slice(b));
+    requestAnimationFrame(() => { el.focus(); const c = a + pad.length; el.setSelectionRange(c, c); });
+  };
+  const ops: [string, string][] = [['+', '+'], ['−', '-'], ['×', '*'], ['÷', '/'], ['xʸ', '^'], ['(', '('], [')', ')'], ['√', 'sqrt('], ['π', 'pi'], ['sin', 'sin('], ['cos', 'cos('], ['ln', 'log(']];
+  return (
+    <div className="field">
+      <span className="field-label">{t('Answer formula')}</span>
+      <div className="calc-keys">
+        {vars.filter(Boolean).map((v) => <button key={`v-${v}`} type="button" className="calc-var" onMouseDown={(e) => e.preventDefault()} onClick={() => insert(v)}>{v}</button>)}
+        {ops.map(([label, s]) => <button key={label} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => insert(s)}>{label}</button>)}
+      </div>
+      <input ref={ref} type="text" value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder="F * L / 4"
+        style={{ fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: 14 }} aria-label={t('Answer formula')} />
     </div>
   );
 }
@@ -95,31 +194,31 @@ const Text = ({ label, value, onChange, placeholder, type = 'text', mono }: {
 );
 
 function Fields({ type, d, set }: { type: NoteType; d: any; set: (patch: any) => void }) {
-  const mathHint = <>{t('Markdown,')} <code>$inline$</code> {t('and')} <code>$$display$$</code> LaTeX</>;
   switch (type) {
     case 'basic':
       return (
         <>
-          <MdField label="Front" value={d.front} onChange={(front) => set({ front })} hint={mathHint} />
+          <MdField label="Front" value={d.front} onChange={(front) => set({ front })} placeholder="What is the capital of Denmark?"
+            hint={t('Tip: you can paste or drop pictures.')} />
           <MdField label="Back side" value={d.back} onChange={(back) => set({ back })} />
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
-            <input type="checkbox" checked={!!d.reverse} onChange={(e) => set({ reverse: e.target.checked })} /> Also create the reverse card
+            <input type="checkbox" checked={!!d.reverse} onChange={(e) => set({ reverse: e.target.checked })} /> {t('Also ask the other way round (back → front)')}
           </label>
         </>
       );
     case 'cloze':
       return (
         <>
-          <MdField label="Text" value={d.text} rows={6} onChange={(text) => set({ text })}
-            placeholder={'The time constant of an RC circuit is {{c1::$\\tau = RC$}}.'}
-            hint={<>{t('Hide parts with')} <code>{'{{c1::answer}}'}</code>, <code>{'{{c2::answer::hint}}'}</code>. {t('Works inside LaTeX too.')}</>} />
+          <MdField label="Text" value={d.text} rows={6} onChange={(text) => set({ text })} gap
+            placeholder="The capital of Denmark is Copenhagen."
+            hint={t('Select words and tap “Make gap”. Each gap becomes its own card.')} />
           <MdField label="Extra (shown with the answer)" value={d.extra} rows={2} onChange={(extra) => set({ extra })} />
         </>
       );
     case 'numeric':
       return (
         <>
-          <MdField label="Question" value={d.question} onChange={(question) => set({ question })} hint={mathHint}
+          <MdField label="Question" value={d.question} onChange={(question) => set({ question })}
             placeholder="A 12 V source drives a 4.7 kΩ resistor. What is the current?" />
           <div className="row">
             <Text label="Answer" type="number" value={d.value} onChange={(v) => set({ value: v === '' ? '' : Number(v) })} placeholder="2.553" />
@@ -132,12 +231,11 @@ function Fields({ type, d, set }: { type: NoteType; d: any; set: (patch: any) =>
       );
     case 'param': {
       const setVar = (i: number, patch: any) => set({ vars: d.vars.map((v: any, j: number) => (j === i ? { ...v, ...patch } : v)) });
+      const names: string[] = d.vars.map((v: any) => v.name).filter(Boolean);
       return (
         <>
-          <MdField label="Question" value={d.question} onChange={(question) => set({ question })}
-            placeholder="A beam of length {{L}} m carries a point load of {{F}} kN at midspan. What is the maximum bending moment?"
-            hint={<>{t('Insert a variable with')} <code>{'{{name}}'}</code>. {t('Its value changes on every review.')}</>} />
           <span className="field-label">{t('Variables')}</span>
+          <p className="hint" style={{ margin: '0 0 8px' }}>{t('Each variable gets a new random value between min and max on every review.')}</p>
           <div className="sub-row muted" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr 36px', fontSize: 12.5, marginBottom: 2 }}>
             <span>{t('Name')}</span><span>{t('Min')}</span><span>{t('Max')}</span><span>{t('Step')}</span><span />
           </div>
@@ -152,7 +250,11 @@ function Fields({ type, d, set }: { type: NoteType; d: any; set: (patch: any) =>
           ))}
           <button type="button" className="btn small" style={{ marginBottom: 14 }}
             onClick={() => set({ vars: [...d.vars, { name: '', min: 1, max: 10, step: 1 }] })}><Plus size={15} /> {t('Variable')}</button>
-          <Text label="Answer formula" mono value={d.formula} onChange={(formula) => set({ formula })} placeholder="F * L / 4" />
+          <MdField label="Question" value={d.question} onChange={(question) => set({ question })}
+            placeholder="A beam of length {{L}} m carries a point load of {{F}} kN at midspan. What is the maximum bending moment?"
+            chips={names.map((n) => ({ label: n, insert: `{{${n}}}` }))}
+            hint={t('Tap a variable button to put it into the question.')} />
+          <FormulaBuilder value={d.formula} onChange={(formula) => set({ formula })} vars={names} />
           <ParamCheck d={d} />
           <div className="row">
             <Text label="Unit" value={d.unit} onChange={(unit) => set({ unit })} placeholder="kNm" />
@@ -168,11 +270,14 @@ function Fields({ type, d, set }: { type: NoteType; d: any; set: (patch: any) =>
       return (
         <>
           <Text label="Name" value={d.name} onChange={(name) => set({ name })} placeholder="Bernoulli's equation" />
-          <Text label="Formula (LaTeX)" mono value={d.latex} onChange={(latex) => set({ latex })} placeholder="p + \tfrac{1}{2}\rho v^2 + \rho g h = \text{const}" />
+          <div className="field">
+            <span className="field-label">{t('Formula')}</span>
+            <MathInput value={d.latex} onChange={(latex) => set({ latex })} ariaLabel={t('Formula')} />
+          </div>
           <span className="field-label">{t('Symbols')}</span>
           {d.symbols.map((s: any, i: number) => (
-            <div key={i} className="sub-row" style={{ gridTemplateColumns: '90px 1fr 90px 36px' }}>
-              <input type="text" value={s.sym} placeholder="\rho" aria-label={t('Symbol (LaTeX)')} onChange={(e) => setSym(i, { sym: e.target.value })} />
+            <div key={i} className="sub-row sym-row">
+              <MathInput small value={s.sym} onChange={(sym) => setSym(i, { sym })} ariaLabel={t('Symbol')} />
               <input type="text" value={s.meaning} placeholder={t('fluid density')} aria-label={t('Meaning')} onChange={(e) => setSym(i, { meaning: e.target.value })} />
               <input type="text" value={s.unit} placeholder="kg/m³" aria-label={t('Unit')} onChange={(e) => setSym(i, { unit: e.target.value })} />
               <button type="button" className="btn ghost small" aria-label={t('Remove symbol')} onClick={() => set({ symbols: d.symbols.filter((_: any, j: number) => j !== i) })}><Trash2 size={15} /></button>
@@ -182,12 +287,13 @@ function Fields({ type, d, set }: { type: NoteType; d: any; set: (patch: any) =>
             onClick={() => set({ symbols: [...d.symbols, { sym: '', meaning: '', unit: '' }] })}><Plus size={15} /> {t('Symbol')}</button>
           <span className="field-label">{t('Rearrangements (one card each)')}</span>
           {d.rearrangements.map((r: any, i: number) => (
-            <div key={r.id} className="sub-row" style={{ gridTemplateColumns: '90px 1fr 36px' }}>
-              <input type="text" value={r.solveFor} placeholder="v" aria-label={t('Solve for')} onChange={(e) => setRe(i, { solveFor: e.target.value })} />
-              <input type="text" value={r.latex} placeholder="v = \sqrt{\dots}" aria-label={t('Rearranged formula (LaTeX)')} onChange={(e) => setRe(i, { latex: e.target.value })} />
+            <div key={r.id} className="sub-row re-row">
+              <MathInput small value={r.solveFor} onChange={(solveFor) => setRe(i, { solveFor })} ariaLabel={t('Solve for')} />
+              <MathInput small value={r.latex} onChange={(latex) => setRe(i, { latex })} ariaLabel={t('Rearranged formula')} />
               <button type="button" className="btn ghost small" aria-label={t('Remove rearrangement')} onClick={() => set({ rearrangements: d.rearrangements.filter((_: any, j: number) => j !== i) })}><Trash2 size={15} /></button>
             </div>
           ))}
+          {d.rearrangements.length > 0 && <p className="hint" style={{ margin: '-4px 0 8px' }}>{t('Left: the symbol to solve for. Right: the rearranged formula.')}</p>}
           <button type="button" className="btn small" style={{ marginBottom: 14 }}
             onClick={() => set({ rearrangements: [...d.rearrangements, { id: newId(), solveFor: '', latex: '' }] })}><Plus size={15} /> {t('Rearrangement')}</button>
           <MdField label="Notes: assumptions, when it applies (optional)" value={d.notes} rows={2} onChange={(notes) => set({ notes })} />
@@ -222,10 +328,9 @@ function Fields({ type, d, set }: { type: NoteType; d: any; set: (patch: any) =>
           <MdField label="What is derived" value={d.title} rows={2} onChange={(title) => set({ title })} placeholder="Derive the transfer function of a mass–spring–damper system." />
           <span className="field-label">{t('Steps (the first is shown as the starting point)')}</span>
           {d.steps.map((s: string, i: number) => (
-            <div key={i} className="sub-row" style={{ gridTemplateColumns: '24px 1fr 36px', alignItems: 'start' }}>
-              <span className="muted num" style={{ paddingTop: 9 }}>{i + 1}</span>
-              <textarea rows={2} value={s} style={{ minHeight: 0 }} aria-label={t('Step {n}', { n: i + 1 })}
-                onChange={(e) => set({ steps: d.steps.map((x: string, j: number) => (j === i ? e.target.value : x)) })} />
+            <div key={i} className="step-row">
+              <MdField label={t('Step {n}', { n: i + 1 })} value={s} rows={2}
+                onChange={(v) => set({ steps: d.steps.map((x: string, j: number) => (j === i ? v : x)) })} />
               <button type="button" className="btn ghost small" aria-label={t('Remove step')} onClick={() => set({ steps: d.steps.filter((_: string, j: number) => j !== i) })}><Trash2 size={15} /></button>
             </div>
           ))}
@@ -282,6 +387,10 @@ export function NoteEditor() {
 
   const [courseId, setCourseId] = useState<number | ''>(Number(search.get('course')) || '');
   const [type, setType] = useState<NoteType>('basic');
+  const [advanced, setAdvancedState] = useState(() => { try { return localStorage.getItem('advancedTypes') === '1'; } catch { return false; } });
+  const setAdvanced = (v: boolean) => { setAdvancedState(v); try { localStorage.setItem('advancedTypes', v ? '1' : '0'); } catch { /* private mode */ } };
+  const showAdvanced = advanced || ADVANCED_TYPES.includes(type);
+  const pickType = (k: NoteType) => { setType(k); setPreviewOrd(0); };
   const [drafts, setDrafts] = useState<Partial<Record<NoteType, any>>>({ basic: BLANK.basic() });
   const [tags, setTags] = useState('');
   const [sourceText, setSourceText] = useState('');
@@ -344,12 +453,22 @@ export function NoteEditor() {
       <div className="editor" style={{ marginTop: 20 }}>
         <div>
           {!editing && (
-            <div className="type-grid">
-              {(Object.keys(NOTE_TYPE_LABELS) as NoteType[]).map((t) => (
-                <button key={t} type="button" className={`type-btn ${t === type ? 'on' : ''}`} onClick={() => { setType(t); setPreviewOrd(0); }}>
-                  {ICONS[t]}{tr(NOTE_TYPE_LABELS[t])}
+            <div className="type-picker">
+              <div className="type-grid">
+                {SIMPLE_TYPES.map((k) => <TypeButton key={k} k={k} on={k === type} pick={pickType} />)}
+              </div>
+              {showAdvanced ? (
+                <>
+                  <div className="type-group-label">{t('For science and engineering')}</div>
+                  <div className="type-grid">
+                    {ADVANCED_TYPES.map((k) => <TypeButton key={k} k={k} on={k === type} pick={pickType} />)}
+                  </div>
+                </>
+              ) : (
+                <button type="button" className="btn ghost small more-types" onClick={() => setAdvanced(true)}>
+                  <Plus size={15} /> {t('More card types for science and engineering')}
                 </button>
-              ))}
+              )}
             </div>
           )}
           <div className="panel pad">
@@ -359,11 +478,14 @@ export function NoteEditor() {
               </select>
             </label>
             <Fields type={type} d={raw} set={set} />
-            <Text label="Tags" value={tags} onChange={setTags} placeholder="control-theory exam-2026" />
-            <div className="row">
-              <Text label="Source (optional)" value={sourceText} onChange={setSourceText} placeholder="Lab 1 report, p. 4" />
-              <Text label="Source link" type="url" value={sourceUrl} onChange={setSourceUrl} placeholder="https://…" />
-            </div>
+            <details className="more-options" open={!!(tags || sourceText || sourceUrl) || undefined}>
+              <summary>{t('More options (tags, source)')}</summary>
+              <Text label="Tags" value={tags} onChange={setTags} placeholder="control-theory exam-2026" />
+              <div className="row">
+                <Text label="Source (optional)" value={sourceText} onChange={setSourceText} placeholder="Lab 1 report, p. 4" />
+                <Text label="Source link" type="url" value={sourceUrl} onChange={setSourceUrl} placeholder="https://…" />
+              </div>
+            </details>
           </div>
           <div className="sticky-actions">
             <button className="btn primary" onClick={save}>{editing ? t('Save') : t('Add card')} <kbd>Ctrl ↵</kbd></button>

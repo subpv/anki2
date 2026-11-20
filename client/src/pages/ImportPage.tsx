@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, ClipboardPaste, FileUp, Upload } from 'lucide-react';
-import { api, ApiError } from '../api.ts';
+import { BookOpen, ClipboardPaste, FileUp, ImagePlus, Upload, X } from 'lucide-react';
+import { api, ApiError, uploadImage } from '../api.ts';
 import { lang, t, tn } from '../i18n.ts';
 import { useApp } from '../App.tsx';
 import { MsgBox } from './SettingsPage.tsx';
@@ -28,6 +28,8 @@ function problemText(p: Problem): string {
       case 'bad-var': return t('Variable "{x}" needs a name (letters/digits) and numbers min ≤ max and step.', { x: f });
       case 'bad-url': return t('"{x}" must start with http:// or https://.', { x: f });
       case 'no-cards': return t('This would not create any cards.');
+      case 'image-missing': return t('Picture "{x}" was not attached. Add it under “Pictures for this import”.', { x: f });
+      case 'image-download': return t('Picture could not be downloaded: {x}', { x: f });
       default: return p.code;
     }
   })();
@@ -45,6 +47,21 @@ export function ImportPage() {
   const [textMsg, setTextMsg] = useState<Msg>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLInputElement>(null);
+  // Pictures uploaded for this import, by file name, e.g. { "folie3.png": "/media/ab12….png" }.
+  const [images, setImages] = useState<{ name: string; url?: string; error?: string; preview: string }[]>([]);
+  const addImages = async (list: File[]) => {
+    const fresh = list.filter((f) => f.type.startsWith('image/')).map((f) => ({ name: f.name, preview: URL.createObjectURL(f), file: f }));
+    setImages((cur) => [...cur.filter((c) => !fresh.some((n) => n.name === c.name)), ...fresh.map(({ name, preview }) => ({ name, preview }))]);
+    for (const f of fresh) {
+      try {
+        const url = await uploadImage(f.file);
+        setImages((cur) => cur.map((c) => (c.name === f.name ? { ...c, url } : c)));
+      } catch (err) {
+        setImages((cur) => cur.map((c) => (c.name === f.name ? { ...c, error: (err as Error).message } : c)));
+      }
+    }
+  };
 
   // Ready-made decks
   const [decks, setDecks] = useState<DeckInfo[]>([]);
@@ -71,8 +88,9 @@ export function ImportPage() {
   const importText = async () => {
     setBusy('text'); setTextMsg(null); setProblems([]);
     try {
-      const body = target === 'new' ? { text, newCourse: newName || jsonCourse } : { text, courseId: Number(target) };
-      const r = await api<{ kind: string; courseId: number; added: number; cards?: number; existing?: number; skipped?: number; repaired?: number }>('/api/import/text', { body });
+      const files = Object.fromEntries(images.filter((i) => i.url).map((i) => [i.name, i.url!]));
+      const body = target === 'new' ? { text, files, newCourse: newName || jsonCourse } : { text, files, courseId: Number(target) };
+      const r = await api<{ kind: string; courseId: number; added: number; cards?: number; existing?: number; skipped?: number; repaired?: number; downloaded?: number }>('/api/import/text', { body });
       await refresh();
       const parts = r.kind === 'json'
         ? [tn(r.added, 'Imported {n} note', 'Imported {n} notes') + ` (${tn(r.cards ?? 0, '{n} card', '{n} cards')}).`]
@@ -80,8 +98,10 @@ export function ImportPage() {
       if (r.existing) parts.push(tn(r.existing, '{n} was already there.', '{n} were already there.'));
       if (r.skipped) parts.push(tn(r.skipped, 'Skipped {n} line without a meaning.', 'Skipped {n} lines without a meaning.'));
       if (r.repaired) parts.push(tn(r.repaired, 'Fixed {n} LaTeX backslash.', 'Fixed {n} LaTeX backslashes.'));
+      if (r.downloaded) parts.push(tn(r.downloaded, 'Downloaded {n} picture.', 'Downloaded {n} pictures.'));
       setTextMsg({ ok: true, text: parts.join(' '), courseId: r.courseId });
       setText('');
+      setImages([]);
     } catch (err) {
       const e = err as ApiError;
       if (e.data?.problems) setProblems(e.data.problems);
@@ -97,6 +117,7 @@ export function ImportPage() {
       document.getElementById('anki')?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
+    if (f.type.startsWith('image/')) { addImages([f]); return; }
     f.text().then((s) => { setText(s); setTextMsg(null); setProblems([]); });
   };
 
@@ -146,11 +167,34 @@ export function ImportPage() {
         <p>{t('Paste the JSON an AI wrote for you, or a word list.')} <Link to="/wiki#ai">{t('How to let an AI write cards')}</Link></p>
         <textarea className="paste" rows={9} value={text} onChange={(e) => { setText(e.target.value); setProblems([]); }}
           placeholder={'{ "notes": [ { "type": "basic", "front": "…", "back": "…" } ] }\n\nen hund | der Hund | 🐕'} spellCheck={false}
-          onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); }} />
+          onDragOver={(e) => e.preventDefault()} onDrop={(e) => {
+            e.preventDefault();
+            const all = [...e.dataTransfer.files];
+            const pics = all.filter((f) => f.type.startsWith('image/'));
+            if (pics.length) addImages(pics);
+            const other = all.find((f) => !f.type.startsWith('image/'));
+            if (other) loadFile(other);
+          }} />
         <div className="paste-meta">
           {kind && <span className="badge">{kind === 'json' ? t('JSON cards') : t('Word list')}</span>}
           <button type="button" className="btn ghost small" onClick={() => fileRef.current?.click()}><FileUp size={15} /> {t('Load file')}</button>
           <input ref={fileRef} type="file" hidden accept=".json,.txt,.csv,.tsv,.md,.apkg,.colpkg,application/json,text/plain,text/csv" onChange={(e) => loadFile(e.target.files?.[0])} />
+        </div>
+        <div className="import-images">
+          <div className="field-label">{t('Pictures for this import')} <span className="muted">{t('(optional)')}</span></div>
+          <p className="hint" style={{ margin: '0 0 8px' }}>{t('If the cards use your own pictures (e.g. lecture slides), add them here. The AI refers to them by file name.')}</p>
+          <div className="img-chips">
+            {images.map((i) => (
+              <div key={i.name} className={`img-chip ${i.error ? 'bad' : i.url ? '' : 'busy'}`} title={i.error ?? ''}>
+                <img src={i.preview} alt="" />
+                <span>{i.name}</span>
+                <button type="button" aria-label={t('Remove')} onClick={() => setImages((cur) => cur.filter((c) => c.name !== i.name))}><X size={14} /></button>
+              </div>
+            ))}
+            <button type="button" className="btn small" onClick={() => imgRef.current?.click()}><ImagePlus size={15} /> {t('Add pictures')}</button>
+            <input ref={imgRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif" multiple hidden
+              onChange={(e) => { addImages([...(e.target.files ?? [])]); e.target.value = ''; }} />
+          </div>
         </div>
         <div className="row wrap" style={{ marginTop: 12 }}>
           <label className="field"><span>{t('Into course')}</span>
@@ -165,7 +209,7 @@ export function ImportPage() {
             </label>
           )}
         </div>
-        <button className="btn primary" disabled={!text.trim() || busy === 'text' || (target === 'new' && !newName.trim() && !jsonCourse)} onClick={importText}>
+        <button className="btn primary" disabled={!text.trim() || busy === 'text' || images.some((i) => !i.url && !i.error) || (target === 'new' && !newName.trim() && !jsonCourse)} onClick={importText}>
           <ClipboardPaste size={16} /> {busy === 'text' ? t('Importing…') : t('Import')}
         </button>
       </div>
