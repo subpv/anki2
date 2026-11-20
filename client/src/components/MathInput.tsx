@@ -17,7 +17,10 @@ function loadMathLive() {
   return loading;
 }
 
-type MathEl = HTMLElement & { value: string; menuItems?: unknown[] };
+type MathEl = HTMLElement & { value: string; hasFocus?: () => boolean };
+
+/** Long form (\\frac{1}{2} rather than MathLive's \\frac12): easier to read and edit as text. */
+const normalize = (latex: string) => latex.replace(/\\([dt]?frac)(\d)(\d)/g, '\\$1{$2}{$3}');
 
 export function MathInput({ value, onChange, ariaLabel, small = false, autoFocus = false }: {
   value: string; onChange: (latex: string) => void; ariaLabel: string; small?: boolean; autoFocus?: boolean;
@@ -31,12 +34,15 @@ export function MathInput({ value, onChange, ariaLabel, small = false, autoFocus
   useEffect(() => {
     const el = ref.current;
     if (!ready || !el) return;
-    if (el.value !== (value ?? '')) el.value = value ?? '';
+    // While someone types, the field is the source of truth: writing back a value from an
+    // earlier keystroke would swallow the newest characters.
+    if (el.hasFocus?.()) return;
+    if (normalize(el.value) !== (value ?? '')) el.value = value ?? '';
   }, [ready, value]);
   useEffect(() => {
     const el = ref.current;
     if (!ready || !el) return;
-    const h = () => change.current(el.value);
+    const h = () => change.current(normalize(el.value));
     el.addEventListener('input', h);
     if (autoFocus) requestAnimationFrame(() => el.focus());
     return () => el.removeEventListener('input', h);
