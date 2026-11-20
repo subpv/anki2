@@ -66,16 +66,33 @@ export const TIMER_FACTOR: Record<NoteType, number> = {
 };
 
 export const NOTE_TYPE_LABELS: Record<NoteType, string> = {
-  basic: 'Basic',
-  cloze: 'Cloze',
-  numeric: 'Numeric answer',
-  param: 'Parametrised problem',
-  formula: 'Formula',
-  code: 'Code',
-  derivation: 'Derivation',
-  occlusion: 'Image occlusion',
+  basic: 'Question & answer',
   vocab: 'Vocabulary',
+  cloze: 'Fill in the gaps',
+  occlusion: 'Label a picture',
+  numeric: 'Calculation',
+  param: 'Calculation with random numbers',
+  formula: 'Learn a formula',
+  derivation: 'Step by step',
+  code: 'Programming',
 };
+
+/** One plain sentence per card type, for the type picker. */
+export const NOTE_TYPE_HELP: Record<NoteType, string> = {
+  basic: 'A question on the front, the answer on the back. Works for almost everything.',
+  vocab: 'A word and its translation, asked both ways. Add a picture if you like.',
+  cloze: 'A sentence with gaps: select words and they become the question.',
+  occlusion: 'Upload a picture and cover the labels you want to learn.',
+  numeric: 'Type a number with unit; it is checked automatically.',
+  param: 'A calculation with new numbers every time.',
+  formula: 'Learn an equation, its symbols and how to rearrange it.',
+  derivation: 'A proof or derivation, revealed one step at a time.',
+  code: 'Write a piece of code for a task.',
+};
+
+/** Everyday types first; the rest are for science and engineering. */
+export const SIMPLE_TYPES: NoteType[] = ['basic', 'vocab', 'cloze', 'occlusion'];
+export const ADVANCED_TYPES: NoteType[] = ['numeric', 'param', 'formula', 'derivation', 'code'];
 
 /** Indices of the cloze deletions in a text, e.g. "{{c2::x}} {{c1::y}}" -> [1, 2]. */
 export function clozeIndices(text: string): number[] {

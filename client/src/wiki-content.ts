@@ -14,7 +14,7 @@ Every note has "type" plus the fields of that type. Optional on every note:
   "tags": "space separated words", "source": "where it comes from, e.g. Lecture 3, slide 12", "sourceUrl": "https://..."
 
 TYPES
-1. basic – question and answer
+1. basic – question and answer (the most common type)
    {"type":"basic","front":"What does an LVDT measure?","back":"Linear displacement.","reverse":false}
    "reverse": true also asks back → front.
 2. cloze – hide parts of a text
@@ -36,7 +36,14 @@ TYPES
 8. vocab – a word, asked in both directions
    {"type":"vocab","word":"en hund","meaning":"der Hund","picture":"🐕","note":"Pl. hunde"}
    "picture" (optional): one emoji, only when it clearly shows the word (mostly nouns).
-Do not create "occlusion" notes (they need boxes drawn on an uploaded image).
+9. occlusion – a picture with labels covered; one card per box
+   {"type":"occlusion","image":"slide3.png","title":"Name the parts of the gearbox","rects":[{"x":0.08,"y":0.10,"w":0.24,"h":0.16,"label":"Input shaft"},{"x":0.40,"y":0.42,"w":0.24,"h":0.16,"label":"Planet carrier"}]}
+   x, y = top-left corner of a box; w, h = its width and height. All four are fractions of the picture's width and height (0 to 1, measured from the top-left). Make each box cover one label completely; "label" is the text under it.
+
+PICTURES
+- If the user gave you picture files, use their exact file names: "image": "slide3.png", "picture": "dog.jpg", or ![](slide3.png) inside any text field. The user uploads the same files together with your JSON.
+- Otherwise you may link a picture on the public web: a direct https link to the image file (.png, .jpg, .webp), e.g. from upload.wikimedia.org. Card downloads it. Only use links you are sure exist; if unsure, leave the picture out.
+- For "vocab", "picture" can also be a single emoji.
 
 TEXT
 - All text fields use Markdown. Math is LaTeX: $inline$ and $$display$$.
@@ -58,13 +65,17 @@ export const WIKI: WikiSection[] = [
     body: {
       de: `1. Kopiere die **KI-Anleitung** unten mit dem Knopf *Anleitung kopieren*.
 2. Füge sie in ChatGPT, Claude o. Ä. ein. Darunter deinen Stoff (Skript, Folientext, Übungsaufgaben) und z. B.: *„Erstelle 30 Karten auf Deutsch zu diesem Kapitel."*
-3. Kopiere die Antwort, öffne **Import → Text einfügen**, füge sie ein, wähle den Kurs und klicke **Importieren**.
+3. Kopiere die Antwort, öffne **Import → Text einfügen**, füge sie ein, wähle den Kurs und klicke **Import**.
+
+**Mit Bildern:** Gib der KI deine Bilder mit (z. B. Screenshots von Folien). Sie verweist auf die Dateinamen und setzt bei *Bild beschriften* die Kästen selbst. Lade dieselben Bilder beim Import unter **Bilder für diesen Import** hoch. Ohne eigene Bilder darf die KI auch Links zu Bildern im Internet nehmen; Card lädt sie herunter.
 4. Hat eine Karte einen Fehler, wird **nichts** importiert und Card listet jede fehlerhafte Karte mit Grund auf. Gib die Liste der KI: *„Korrigiere diese Fehler."*
 
 Vergessene doppelte Backslashes in LaTeX (\`\\frac\` statt \`\\\\frac\`) repariert Card selbst.`,
       en: `1. Copy the **AI instructions** below with *Copy instructions*.
 2. Paste them into ChatGPT, Claude or similar, followed by your material (script, slide text, exercises) and e.g.: *"Create 30 cards in English for this chapter."*
 3. Copy the answer, open **Import → Paste text**, paste it, pick the course and click **Import**.
+
+**With pictures:** give the AI your pictures too (e.g. screenshots of slides). It refers to them by file name and places the boxes for *Label a picture* itself. Upload the same pictures in the import under **Pictures for this import**. Without your own pictures the AI may also use links to pictures on the web; Card downloads them.
 4. If a card has a mistake, **nothing** is imported and Card lists each faulty card with the reason. Give that list back to the AI: *"Fix these errors."*
 
 Card fixes forgotten double backslashes in LaTeX (\`\\frac\` instead of \`\\\\frac\`) by itself.`,
@@ -83,42 +94,60 @@ Card fixes forgotten double backslashes in LaTeX (\`\\frac\` instead of \`\\\\fr
     id: 'types',
     title: { de: 'Kartentypen', en: 'Card types' },
     body: {
-      de: `| Typ | Wofür | Karten |
+      de: `**Für jeden:**
+
+| Kartentyp | Wofür | Karten |
 |---|---|---|
-| \`basic\` | Frage und Antwort | 1 (oder 2 mit \`reverse\`) |
-| \`cloze\` | Lückentext \`{{c1::…}}\` | eine pro Nummer |
-| \`numeric\` | Zahl mit Einheit eintippen, Toleranz in % | 1 |
-| \`param\` | Rechenaufgabe mit neuen Zahlen bei jeder Wiederholung | 1 |
-| \`formula\` | Formel, Symbole, Umstellungen | 1 + 1 + je Umstellung |
-| \`code\` | Code zu einer Aufgabe | 1 |
-| \`derivation\` | Herleitung Schritt für Schritt | 1 |
-| \`vocab\` | Vokabel in beide Richtungen, optional mit Bild | 2 |
-| \`occlusion\` | Beschriftungen auf einem Bild verdecken (nur im Editor) | eine pro Kasten |`,
-      en: `| Type | For | Cards |
+| **Frage & Antwort** (\`basic\`) | Frage vorne, Antwort hinten. Passt fast immer. | 1 (oder 2, auch umgekehrt) |
+| **Vokabel** (\`vocab\`) | Wort und Übersetzung, in beide Richtungen, gern mit Bild | 2 |
+| **Lückentext** (\`cloze\`) | Wörter markieren und auf **Lücke machen** tippen | eine pro Lücke |
+| **Bild beschriften** (\`occlusion\`) | Bild hochladen, Beschriftungen mit Kästen verdecken | eine pro Kasten |
+
+**Für Technik und Mathe** (im Editor unter *Mehr Kartentypen*):
+
+| Kartentyp | Wofür | Karten |
 |---|---|---|
-| \`basic\` | Question and answer | 1 (or 2 with \`reverse\`) |
-| \`cloze\` | Fill in the blank \`{{c1::…}}\` | one per number |
-| \`numeric\` | Type a number with unit, tolerance in % | 1 |
-| \`param\` | Calculation with new numbers on every review | 1 |
-| \`formula\` | Formula, symbols, rearrangements | 1 + 1 + one per rearrangement |
-| \`code\` | Code for a task | 1 |
-| \`derivation\` | Derivation step by step | 1 |
-| \`vocab\` | Word in both directions, optional picture | 2 |
-| \`occlusion\` | Hide labels on an image (editor only) | one per box |`,
+| **Rechenaufgabe** (\`numeric\`) | Zahl mit Einheit eintippen, wird automatisch geprüft | 1 |
+| **Rechenaufgabe mit Zufallszahlen** (\`param\`) | Jedes Mal neue Zahlen | 1 |
+| **Formel lernen** (\`formula\`) | Formel, Symbole, Umstellungen | 1 + 1 + je Umstellung |
+| **Schritt für Schritt** (\`derivation\`) | Herleitung oder Beweis, Schritt für Schritt aufgedeckt | 1 |
+| **Programmieren** (\`code\`) | Code zu einer Aufgabe | 1 |`,
+      en: `**For everyone:**
+
+| Card type | For | Cards |
+|---|---|---|
+| **Question & answer** (\`basic\`) | Question on the front, answer on the back. Fits almost everything. | 1 (or 2, also reversed) |
+| **Vocabulary** (\`vocab\`) | Word and translation, both directions, optionally with a picture | 2 |
+| **Fill in the gaps** (\`cloze\`) | Select words and tap **Make gap** | one per gap |
+| **Label a picture** (\`occlusion\`) | Upload a picture, cover labels with boxes | one per box |
+
+**For science and engineering** (in the editor under *More card types*):
+
+| Card type | For | Cards |
+|---|---|---|
+| **Calculation** (\`numeric\`) | Type a number with unit, checked automatically | 1 |
+| **Calculation with random numbers** (\`param\`) | New numbers every time | 1 |
+| **Learn a formula** (\`formula\`) | Formula, symbols, rearrangements | 1 + 1 + one per rearrangement |
+| **Step by step** (\`derivation\`) | Derivation or proof, revealed step by step | 1 |
+| **Programming** (\`code\`) | Code for a task | 1 |`,
     },
   },
   {
     id: 'writing',
-    title: { de: 'Richtig schreiben: Markdown, LaTeX, Lücken', en: 'Writing: Markdown, LaTeX, cloze' },
+    title: { de: 'Schreiben: Formatierung, Formeln, Lücken', en: 'Writing: formatting, formulas, gaps' },
     body: {
-      de: `- **Fett** mit \`**Text**\`, *kursiv* mit \`*Text*\`, Listen mit \`- \`, Code mit Backticks.
+      de: `Alles geht mit den Knöpfen über dem Textfeld: **Fett**, *Kursiv*, Liste, **Formel** (Formel-Editor wie ein Taschenrechner), **Bild** und bei Lückentexten **Lücke machen**. Die Vorschau rechts zeigt, wie die Karte aussieht. Wer lieber tippt, kann das auch:
+
+- **Fett** mit \`**Text**\`, *kursiv* mit \`*Text*\`, Listen mit \`- \`, Code mit Backticks.
 - **Mathe** in LaTeX: \`$U = R I$\` im Text, \`$$\\frac{1}{2} m v^2$$\` als eigene Zeile. Ergibt $U = RI$ und $$\\tfrac{1}{2} m v^2$$
 - **Lücken:** \`{{c1::Antwort}}\`, mit Hinweis \`{{c1::Antwort::Hinweis}}\`. Gleiche Nummer = gleichzeitig verdeckt. Klappt auch in Formeln: \`$\\tau = {{c1::RC}}$\`.
 - **Parameteraufgaben:** \`{{L}}\` im Fragetext wird durch einen Zufallswert ersetzt; die Formel in math.js-Schreibweise, z. B. \`F * L / 4\`, \`sqrt(2*g*h)\`.
 - **Zahlen-Antworten:** Einheiten mit SI-Präfix werden umgerechnet (2,5 mA = 0,0025 A), Komma und Punkt gehen beide.
 - **Bilder:** im Editor einfügen (einfügen, hineinziehen oder Knopf *Bild*). Im Import nur als Link: \`![](https://…)\`.
 - **In JSON** jeden Backslash doppelt schreiben: \`"\\\\frac{a}{b}"\`.`,
-      en: `- **Bold** with \`**text**\`, *italic* with \`*text*\`, lists with \`- \`, code with backticks.
+      en: `Everything works with the buttons above the text field: **Bold**, *Italic*, list, **Formula** (a formula editor like a calculator), **Picture** and, for gap texts, **Make gap**. The preview shows how the card looks. If you prefer typing, that works too:
+
+- **Bold** with \`**text**\`, *italic* with \`*text*\`, lists with \`- \`, code with backticks.
 - **Math** in LaTeX: \`$U = R I$\` inline, \`$$\\frac{1}{2} m v^2$$\` on its own line. Gives $U = RI$ and $$\\tfrac{1}{2} m v^2$$
 - **Cloze:** \`{{c1::answer}}\`, with a hint \`{{c1::answer::hint}}\`. Same number = hidden together. Works inside formulas: \`$\\tau = {{c1::RC}}$\`.
 - **Parametrised problems:** \`{{L}}\` in the question becomes a random value; the formula uses math.js syntax, e.g. \`F * L / 4\`, \`sqrt(2*g*h)\`.

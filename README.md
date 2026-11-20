@@ -7,6 +7,12 @@ works on phones (bottom bar, installable to the home screen).
 
 ## Card types
 
+The editor shows the four everyday types first (Question & answer, Vocabulary, Fill in the gaps,
+Label a picture); the others are under *More card types for science and engineering*. Nothing has
+to be typed as code: a toolbar adds bold, italic, lists, pictures and formulas (visual formula editor),
+*Make gap* turns selected words into gaps, and calculations are built from variable and operator buttons.
+
+
 | Type | What it does |
 |---|---|
 | Basic | Front and back, optionally reversed. |

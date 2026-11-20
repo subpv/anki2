@@ -27,10 +27,16 @@ export function t(s: string, vars?: Record<string, string | number>): string {
 export const tn = (n: number, one: string, other: string, vars: Record<string, string | number> = {}) =>
   t(n === 1 ? one : other, { n, ...vars });
 
-/** Switch language: remembered on this device; the caller saves it to the account. Reloads the page. */
-export function setLang(l: Lang, reload = true) {
-  try { localStorage.setItem('lang', l); } catch { /* private mode */ }
-  if (reload && l !== lang) window.location.reload();
+/**
+ * Switch the interface language in place (no page reload, so blocked storage cannot cause a
+ * reload loop). Remembered on this device; the caller saves it to the account.
+ */
+export function setLang(l: Lang) {
+  try { localStorage.setItem('lang', l); } catch { /* private mode: keep it for this page only */ }
+  if (l === lang) return;
+  lang = l;
+  document.documentElement.lang = l;
+  window.dispatchEvent(new Event('langchange'));
 }
 
 /** Server messages are English; translate the known ones. */
