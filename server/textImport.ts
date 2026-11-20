@@ -25,22 +25,30 @@ const LATEX_WORDS = new Set([
 export function repairLatexBackslashes(text: string): { text: string; repaired: number } {
   let out = '';
   let inString = false;
+  let inMath = false; // inside $…$ of the current JSON string
   let repaired = 0;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (!inString) {
-      if (c === '"') inString = true;
+      if (c === '"') { inString = true; inMath = false; }
       out += c;
       continue;
     }
     if (c === '"') { inString = false; out += c; continue; }
+    if (c === '$') {
+      if (text[i + 1] === '$') { out += '$$'; i++; } else out += c; // $$…$$ counts as one marker
+      inMath = !inMath;
+      continue;
+    }
     if (c !== '\\') { out += c; continue; }
     const next = text[i + 1] ?? '';
     if (next === '\\' || next === '"' || next === '/') { out += c + next; i++; continue; }
     if ('bfnrt'.includes(next) && next !== '') {
+      // \n, \t … are real escapes in JSON. Only inside a formula is "\nu" or "\theta" taken as LaTeX,
+      // so a line break before e.g. "u. a." in normal text stays a line break.
       const word = text.slice(i + 1).match(/^[A-Za-z]+/)?.[0] ?? '';
-      if (LATEX_WORDS.has(word)) { out += '\\\\'; repaired++; continue; }
-      out += c; // a real \n, \t, …
+      if (inMath && LATEX_WORDS.has(word)) { out += '\\\\'; repaired++; continue; }
+      out += c;
       continue;
     }
     if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(text.slice(i + 2, i + 6))) { out += c; continue; }
@@ -120,7 +128,7 @@ export function parseNotesJson(text: string): ParsedJson {
           name: str(n.name), latex: str(n.latex), notes: str(n.notes),
           symbols: (Array.isArray(n.symbols) ? n.symbols : []).map((s: any) => ({ sym: str(s?.sym), meaning: str(s?.meaning), unit: str(s?.unit) })).filter((s) => s.sym),
           rearrangements: (Array.isArray(n.rearrangements) ? n.rearrangements : [])
-            .map((r: any) => ({ id: str(r?.id) || id(), solveFor: str(r?.solveFor), latex: str(r?.latex) })).filter((r) => r.latex),
+            .map((r: any) => ({ id: id(), solveFor: str(r?.solveFor), latex: str(r?.latex) })).filter((r) => r.latex), // fresh ids: duplicates from an AI would collide
         };
         break;
       case 'code':
@@ -137,7 +145,7 @@ export function parseNotesJson(text: string): ParsedJson {
       case 'occlusion': {
         need('image');
         const rects = (Array.isArray(n.rects) ? n.rects : []).map((r: any) => ({
-          id: str(r?.id) || id(), x: num(r?.x), y: num(r?.y), w: num(r?.w), h: num(r?.h), label: str(r?.label),
+          id: id(), x: num(r?.x), y: num(r?.y), w: num(r?.w), h: num(r?.h), label: str(r?.label), // fresh ids, see above
         }));
         if (!rects.length || rects.some((r) => ![r.x, r.y, r.w, r.h].every((v) => Number.isFinite(v) && v >= 0 && v <= 1) || r.w <= 0 || r.h <= 0 || r.x + r.w > 1.001 || r.y + r.h > 1.001)) bad('not-list', 'rects');
         data = { image: str(n.image), title: str(n.title), rects };

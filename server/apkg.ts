@@ -75,7 +75,14 @@ export function importApkg(file: Buffer, userId: number, courseId: number): Impo
   for (const e of zip.getEntries()) {
     if (e.header.size > MAX_UNPACKED) throw new Error('The package is too large.');
   }
-  const entry = (name: string) => zip.getEntry(name)?.getData();
+  // Count what is actually unpacked, not only what the entries claim.
+  let unpacked = 0;
+  const entry = (name: string) => {
+    const data = zip.getEntry(name)?.getData();
+    unpacked += data?.length ?? 0;
+    if (unpacked > MAX_UNPACKED * 2) throw new Error('The package is too large.');
+    return data;
+  };
   const collection = entry('collection.anki21b') ?? entry('collection.anki21') ?? entry('collection.anki2');
   if (!collection) throw new Error('This file does not look like an Anki deck package (.apkg).');
 

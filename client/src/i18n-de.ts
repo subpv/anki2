@@ -241,6 +241,7 @@ export const de: Record<string, string> = {
   'If the cards use your own pictures (e.g. lecture slides), add them here. The AI refers to them by file name.': 'Wenn die Karten eigene Bilder nutzen (z. B. Vorlesungsfolien), füge sie hier hinzu. Die KI verweist über den Dateinamen darauf.',
   'Picture "{x}" was not attached. Add it under “Pictures for this import”.': 'Bild „{x}“ fehlt. Füge es unter „Bilder für diesen Import“ hinzu.',
   'Picture could not be downloaded: {x}': 'Bild konnte nicht heruntergeladen werden: {x}',
+  'Too many web pictures in one import (at most {x}). Split the import into smaller parts.': 'Zu viele Bilder aus dem Internet in einem Import (höchstens {x}). Teile den Import in kleinere Teile auf.',
   'Downloaded {n} picture.': '{n} Bild heruntergeladen.',
   'Downloaded {n} pictures.': '{n} Bilder heruntergeladen.',
 

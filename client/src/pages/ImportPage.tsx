@@ -30,6 +30,7 @@ function problemText(p: Problem): string {
       case 'no-cards': return t('This would not create any cards.');
       case 'image-missing': return t('Picture "{x}" was not attached. Add it under “Pictures for this import”.', { x: f });
       case 'image-download': return t('Picture could not be downloaded: {x}', { x: f });
+      case 'too-many-images': return t('Too many web pictures in one import (at most {x}). Split the import into smaller parts.', { x: f });
       default: return p.code;
     }
   })();
@@ -50,6 +51,14 @@ export function ImportPage() {
   const imgRef = useRef<HTMLInputElement>(null);
   // Pictures uploaded for this import, by file name, e.g. { "folie3.png": "/media/ab12….png" }.
   const [images, setImages] = useState<{ name: string; url?: string; error?: string; preview: string }[]>([]);
+  // Free the preview URLs of pictures that were removed (and all of them when the page closes).
+  const previews = useRef(new Set<string>());
+  useEffect(() => {
+    const now = new Set(images.map((i) => i.preview));
+    for (const p of previews.current) if (!now.has(p)) URL.revokeObjectURL(p);
+    previews.current = now;
+  }, [images]);
+  useEffect(() => () => { for (const p of previews.current) URL.revokeObjectURL(p); }, []);
   const addImages = async (list: File[]) => {
     const fresh = list.filter((f) => f.type.startsWith('image/')).map((f) => ({ name: f.name, preview: URL.createObjectURL(f), file: f }));
     setImages((cur) => [...cur.filter((c) => !fresh.some((n) => n.name === c.name)), ...fresh.map(({ name, preview }) => ({ name, preview }))]);

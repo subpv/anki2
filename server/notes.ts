@@ -18,7 +18,10 @@ export function validateNote(n: NoteInput): string | null {
   if (n.type === 'vocab' && (!String(n.data.word ?? '').trim() || !String(n.data.meaning ?? '').trim())) {
     return 'Fill in both the word and its meaning';
   }
-  if ((n.type === 'numeric') && !Number.isFinite(Number(n.data.value))) return 'The answer must be a number';
+  if (n.type === 'numeric') {
+    const v = n.data.value;
+    if (v === '' || v === null || v === undefined || typeof v === 'boolean' || !Number.isFinite(Number(v))) return 'The answer must be a number';
+  }
   if (n.sourceUrl && !/^https?:\/\//i.test(n.sourceUrl)) return 'The source link must start with http:// or https://';
   return null;
 }
@@ -28,8 +31,10 @@ export function syncCards(noteId: number, userId: number, courseId: number, type
   const want = cardOrds(type, data);
   const have = db.prepare('SELECT id, ord FROM cards WHERE note_id = ?').all(noteId) as { id: number; ord: string }[];
   const now = Date.now();
-  const ins = db.prepare('INSERT INTO cards (note_id, user_id, course_id, ord, due) VALUES (?, ?, ?, ?, ?)');
-  for (const ord of want) if (!have.some((c) => c.ord === ord)) ins.run(noteId, userId, courseId, ord, now);
+  // New cards of a suspended note start suspended too.
+  const suspended = (db.prepare('SELECT COALESCE(MIN(suspended), 0) AS s FROM cards WHERE note_id = ?').get(noteId) as { s: number }).s;
+  const ins = db.prepare('INSERT INTO cards (note_id, user_id, course_id, ord, due, suspended) VALUES (?, ?, ?, ?, ?, ?)');
+  for (const ord of new Set(want)) if (!have.some((c) => c.ord === ord)) ins.run(noteId, userId, courseId, ord, now, have.length ? suspended : 0);
   for (const c of have) if (!want.includes(c.ord)) db.prepare('DELETE FROM cards WHERE id = ?').run(c.id);
   db.prepare('UPDATE cards SET course_id = ? WHERE note_id = ?').run(courseId, noteId);
   db.prepare('UPDATE revlog SET course_id = ? WHERE card_id IN (SELECT id FROM cards WHERE note_id = ?)').run(courseId, noteId);

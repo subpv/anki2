@@ -263,10 +263,10 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
   app.get('/api/notes', async (req) => {
     const q = req.query as { course?: string; q?: string; type?: string; tag?: string; limit?: string };
     const where = ['n.user_id = @u'];
-    const params: Record<string, unknown> = { u: req.user.id, limit: Math.min(500, Number(q.limit) || 200) };
+    const params: Record<string, unknown> = { u: req.user.id, limit: Math.min(500, Math.max(1, Math.floor(Number(q.limit)) || 200)) };
     if (q.course) { where.push('n.course_id = @course'); params.course = Number(q.course); }
     if (q.type) { where.push('n.type = @type'); params.type = q.type; }
-    if (q.tag) { where.push("(' ' || n.tags || ' ') LIKE @tag"); params.tag = `% ${q.tag} %`; }
+    if (q.tag) { where.push("(' ' || n.tags || ' ') LIKE @tag ESCAPE '\\'"); params.tag = `% ${q.tag.replace(/[\\%_]/g, '\\$&')} %`; }
     if (q.q?.trim()) {
       where.push("(n.data LIKE @q ESCAPE '\\' OR n.tags LIKE @q ESCAPE '\\' OR n.source_text LIKE @q ESCAPE '\\')");
       params.q = `%${q.q.trim().replace(/[\\%_]/g, '\\$&')}%`;
@@ -338,14 +338,15 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
   });
 
   // ---- Review --------------------------------------------------------------
-  const cardPayload = (user: User, row: CardRow, now: number) => {
+  const cardPayload = (user: User, row: CardRow, now: number, withIntervals = true) => {
     const note = db.prepare('SELECT * FROM notes WHERE id = ?').get(row.note_id);
     const course = db.prepare('SELECT * FROM courses WHERE id = ?').get(row.course_id) as CourseRow;
     return {
       card: { id: row.id, ord: row.ord, state: row.state, due: row.due, reps: row.reps, lapses: row.lapses },
       note: rowToNote(note),
       course: { id: course.id, name: course.name, color: course.color },
-      intervals: previewIntervals(schedulerFor(user), row, course.exam_date, now),
+      // Cram does not reschedule, so it does not need the intervals (costly for big courses).
+      intervals: withIntervals ? previewIntervals(schedulerFor(user), row, course.exam_date, now) : { 1: '', 2: '', 3: '', 4: '' },
     };
   };
 
@@ -359,7 +360,7 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
       counts.new += cc.new; counts.learning += cc.learning; counts.due += cc.due;
     }
     const row = nextCard(req.user.id, courses, now);
-    const canUndo = !!db.prepare('SELECT 1 FROM revlog WHERE user_id = ? AND review >= ? LIMIT 1').get(req.user.id, dayStart(now));
+    const canUndo = !!lastUndoable(req.user.id, courseId, now);
     return { next: row ? cardPayload(req.user, row, now) : null, counts, canUndo };
   });
 
@@ -384,10 +385,15 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
     return { ok: true };
   });
 
+  /** Undo only today's reviews, and in a course review only that course's. */
+  const lastUndoable = (userId: number, courseId: number | undefined, now: number) =>
+    db.prepare(
+      `SELECT id, card_id, prev FROM revlog WHERE user_id = ? AND review >= ? ${courseId ? 'AND course_id = ?' : ''}
+       ORDER BY review DESC, id DESC LIMIT 1`,
+    ).get(...[userId, dayStart(now), ...(courseId ? [courseId] : [])]) as { id: number; card_id: number; prev: string } | undefined;
+
   app.post('/api/review/undo', async (req, reply) => {
-    const log = db
-      .prepare('SELECT id, card_id, prev FROM revlog WHERE user_id = ? ORDER BY review DESC, id DESC LIMIT 1')
-      .get(req.user.id) as { id: number; card_id: number; prev: string } | undefined;
+    const log = lastUndoable(req.user.id, Number((req.query as any).course) || undefined, Date.now());
     if (!log) return reply.code(404).send({ error: 'Nothing to undo' });
     const p = JSON.parse(log.prev) as CardRow;
     db.transaction(() => {
@@ -412,7 +418,7 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
       [rows[i], rows[j]] = [rows[j], rows[i]];
     }
     const now = Date.now();
-    return rows.map((r) => cardPayload(req.user, r, now));
+    return rows.map((r) => cardPayload(req.user, r, now, false));
   });
 
   // ---- Stats ---------------------------------------------------------------
@@ -448,24 +454,32 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
       )
       .get(u) as Record<string, number | null>;
 
-    const reviews = Array.from({ length: DAYS }, (_, i) => ({ day: start - (DAYS - 1 - i) * DAY, count: 0, again: 0 }));
+    // Study days start at 04:00 local time and are 23 or 25 hours long around DST changes,
+    // so each review is put on the day dayStart() gives it.
+    const dayOf = (offset: number) => dayStart(start + offset * DAY + DAY / 2);
+    const reviews = Array.from({ length: DAYS }, (_, i) => ({ day: dayOf(i - (DAYS - 1)), count: 0, again: 0 }));
+    const reviewIndex = new Map(reviews.map((r, i) => [r.day, i]));
     const logs = db
       .prepare(`SELECT review, rating, state FROM revlog WHERE user_id = ? AND review >= ? ${cf}`)
-      .all(u, start - (DAYS - 1) * DAY) as { review: number; rating: number; state: number }[];
+      .all(u, reviews[0].day) as { review: number; rating: number; state: number }[];
     let matureTotal = 0, maturePassed = 0;
     for (const l of logs) {
-      const i = Math.floor((l.review - reviews[0].day) / DAY);
-      if (!reviews[i]) continue;
+      const i = reviewIndex.get(dayStart(l.review));
+      if (i === undefined) continue;
       reviews[i].count++;
       if (l.rating === 1) reviews[i].again++;
       if (l.state === 2) { matureTotal++; if (l.rating > 1) maturePassed++; }
     }
 
-    const forecast = Array.from({ length: DAYS }, (_, i) => ({ day: start + i * DAY, count: 0 }));
+    const forecast = Array.from({ length: DAYS }, (_, i) => ({ day: dayOf(i), count: 0 }));
+    const forecastIndex = new Map(forecast.map((f, i) => [f.day, i]));
     const dues = db
       .prepare(`SELECT due FROM cards WHERE user_id = ? AND suspended = 0 AND state != 0 AND due < ? ${cf}`)
-      .all(u, start + DAYS * DAY) as { due: number }[];
-    for (const d of dues) forecast[Math.max(0, Math.floor((d.due - start) / DAY))].count++;
+      .all(u, dayOf(DAYS)) as { due: number }[];
+    for (const d of dues) {
+      const i = d.due < start ? 0 : forecastIndex.get(dayStart(d.due)); // overdue counts as today
+      if (i !== undefined) forecast[i].count++;
+    }
 
     const streak = studyStreak(u, cf, now);
     const total = (db.prepare(`SELECT COUNT(*) AS n FROM revlog WHERE user_id = ? ${cf}`).get(u) as { n: number }).n;
@@ -563,18 +577,28 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
     if (!body) return reply.code(400).send({ error: 'Nothing to import' });
     const isJson = body.startsWith('{') || body.startsWith('[') || body.startsWith('```');
     const parsed = isJson ? parseNotesJson(body) : null;
-    let downloaded = 0;
-    if (parsed && !parsed.problems.length) downloaded = await resolveImages(parsed.notes, files, parsed.problems);
     if (parsed?.problems.length) return reply.code(400).send({ error: 'The import has problems', problems: parsed.problems.slice(0, 50), repaired: parsed.repaired });
     const words = isJson ? null : parseWordList(body);
     if (words && !words.entries.length) return reply.code(400).send({ error: 'No words found. Each line needs a word and its meaning, separated by a tab, | or ;' });
 
+    // Check the course before downloading any pictures.
     let target = Number(courseId) || 0;
-    if (target) {
-      if (!userCourses(req.user.id, target).length) return reply.code(400).send({ error: 'Pick a course' });
-    } else {
-      const name = (String(newCourse).trim() || parsed?.course || '').slice(0, 80);
-      if (!name) return reply.code(400).send({ error: 'Pick a course' });
+    const name = (String(newCourse).trim() || parsed?.course || '').slice(0, 80);
+    if (target ? !userCourses(req.user.id, target).length : !name) return reply.code(400).send({ error: 'Pick a course' });
+
+    let downloaded = 0;
+    let cleanupPictures = () => {};
+    if (parsed) {
+      const pics = await resolveImages(parsed.notes, files, parsed.problems);
+      downloaded = pics.downloaded;
+      cleanupPictures = pics.cleanup;
+      if (parsed.problems.length) {
+        pics.cleanup(); // nothing is imported, so drop the pictures downloaded for it
+        return reply.code(400).send({ error: 'The import has problems', problems: parsed.problems.slice(0, 50), repaired: parsed.repaired });
+      }
+    }
+
+    if (!target) {
       const existing = db.prepare('SELECT id FROM courses WHERE user_id = ? AND name = ?').get(req.user.id, name) as { id: number } | undefined;
       target = existing?.id ?? Number(
         db.prepare('INSERT INTO courses (user_id, name, color, new_per_day) VALUES (?, ?, ?, 20)').run(req.user.id, name, '#f26a2e').lastInsertRowid,
@@ -582,12 +606,17 @@ export function registerRoutes(app: FastifyInstance, feedbackUrl = '') {
     }
     if (words) return { kind: 'words', courseId: target, skipped: words.skipped, ...importWords(req.user.id, target, words.entries) };
     let cards = 0;
-    db.transaction(() => {
-      for (const n of parsed!.notes) {
-        const noteId = createNote(req.user.id, { ...n, courseId: target });
-        cards += (db.prepare('SELECT COUNT(*) AS n FROM cards WHERE note_id = ?').get(noteId) as { n: number }).n;
-      }
-    })();
+    try {
+      db.transaction(() => {
+        for (const n of parsed!.notes) {
+          const noteId = createNote(req.user.id, { ...n, courseId: target });
+          cards += (db.prepare('SELECT COUNT(*) AS n FROM cards WHERE note_id = ?').get(noteId) as { n: number }).n;
+        }
+      })();
+    } catch (err) {
+      cleanupPictures();
+      throw err;
+    }
     return { kind: 'json', courseId: target, added: parsed!.notes.length, cards, repaired: parsed!.repaired, downloaded };
   });
 

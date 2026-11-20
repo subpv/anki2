@@ -1,3 +1,8 @@
+import { clozeIndices } from './cloze.ts';
+
+/** Indices of the cloze deletions in a text, e.g. "{{c2::x}} {{c1::y}}" -> [1, 2]. */
+export { clozeIndices };
+
 export type NoteType =
   | 'basic' | 'cloze' | 'numeric' | 'param' | 'formula' | 'code' | 'derivation' | 'occlusion' | 'vocab';
 
@@ -94,12 +99,6 @@ export const NOTE_TYPE_HELP: Record<NoteType, string> = {
 export const SIMPLE_TYPES: NoteType[] = ['basic', 'vocab', 'cloze', 'occlusion'];
 export const ADVANCED_TYPES: NoteType[] = ['numeric', 'param', 'formula', 'derivation', 'code'];
 
-/** Indices of the cloze deletions in a text, e.g. "{{c2::x}} {{c1::y}}" -> [1, 2]. */
-export function clozeIndices(text: string): number[] {
-  const set = new Set<number>();
-  for (const m of text.matchAll(/\{\{c(\d+)::/g)) set.add(Number(m[1]));
-  return [...set].sort((a, b) => a - b);
-}
 
 /** The stable card keys a note generates. Cards keep their schedule as long as their key survives an edit. */
 export function cardOrds(type: NoteType, data: any): string[] {

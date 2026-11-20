@@ -12,7 +12,11 @@ import { registerRoutes } from './routes.ts';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT_DIR = [path.join(here, 'client'), path.join(here, '../dist/client')].find((p) => fs.existsSync(p));
 
-const app = Fastify({ logger: { level: process.env.LOG_LEVEL || 'info' }, trustProxy: true });
+// Trust only the reverse proxy directly in front of Card (e.g. cloudflared). Trusting every hop
+// would let clients pick their own address via X-Forwarded-For and skip the rate limits.
+const TRUST_PROXY = Number(process.env.TRUST_PROXY ?? 1);
+const hops = Number.isFinite(TRUST_PROXY) && TRUST_PROXY >= 0 ? TRUST_PROXY : 1;
+const app = Fastify({ logger: { level: process.env.LOG_LEVEL || 'info' }, trustProxy: (_addr: string, hop: number) => hop < hops });
 
 await app.register(cookie);
 await app.register(multipart, { limits: { fileSize: 200 * 1024 * 1024, files: 1 } });
