@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Check, EyeOff, Hourglass, Pencil, Undo2, X } from 'lucide-react';
+import { Check, EyeOff, Hourglass, Pencil, Timer, Undo2, X } from 'lucide-react';
 import { TIMER_FACTOR, type ReviewCard, type Summary } from '../../../shared/types.ts';
 import { api } from '../api.ts';
 import { CourseDot, useApp } from '../App.tsx';
@@ -119,7 +119,7 @@ export function Review({ mode }: { mode: 'review' | 'cram' }) {
     if (mode !== 'review' || !canUndo || busy.current) return;
     busy.current = true;
     try {
-      const r = await api<{ card: ReviewCard }>('/api/review/undo', { method: 'POST' });
+      const r = await api<{ card: ReviewCard }>(`/api/review/undo${courseId ? `?course=${courseId}` : ''}`, { method: 'POST' });
       setDone((n) => Math.max(0, n - 1));
       setFinished(false);
       const fresh = await api<{ counts: Counts; canUndo: boolean }>(`/api/review/next${courseId ? `?course=${courseId}` : ''}`);
@@ -130,10 +130,14 @@ export function Review({ mode }: { mode: 'review' | 'cram' }) {
   }, [mode, canUndo, courseId]);
 
   const suspend = async () => {
-    if (!cur) return;
-    await api(`/api/notes/${cur.note.id}/suspend`, { body: { suspended: true } });
-    if (mode === 'cram') { const rest = queue.filter((q) => q.note.id !== cur.note.id); setQueue(rest.slice(1)); show(rest[0] ?? null); }
-    else load();
+    if (!cur || busy.current) return;
+    busy.current = true;
+    try {
+      await api(`/api/notes/${cur.note.id}/suspend`, { body: { suspended: true } });
+      if (mode === 'cram') { const rest = queue.filter((q) => q.note.id !== cur.note.id); setQueue(rest.slice(1)); show(rest[0] ?? null); }
+      else await load();
+    } catch (err) { setError((err as Error).message); }
+    busy.current = false;
   };
 
   useEffect(() => {
@@ -161,7 +165,7 @@ export function Review({ mode }: { mode: 'review' | 'cram' }) {
         <div className="where">
           {course ? <><CourseDot course={course} size={22} /> {course.name}</> : t('All courses')}
           {mode === 'cram' && <span className="badge">{t('Cram')}</span>}
-          {quick && <span className="badge">5-minute session · {Math.min(done + 1, QUICK_CARDS)} / {QUICK_CARDS}</span>}
+          {quick && <span className="badge" title={t('5-minute session')} aria-label={t('5-minute session')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Timer size={13} /> {Math.min(done + 1, QUICK_CARDS)} / {QUICK_CARDS}</span>}
         </div>
         {mode === 'review' ? (
           <div className="pill-counts" title={t('New · Learning · To review')}>

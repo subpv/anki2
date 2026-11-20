@@ -70,18 +70,4 @@ export function renderTex(tex: string, display = true): string {
   }
 }
 
-/** Render a cloze text for card `index`: that deletion is blanked (or revealed), the others are shown. */
-export function clozeSource(text: string, index: number, revealed: boolean): string {
-  return text.replace(/\{\{c(\d+)::(.*?)(?:::(.*?))?\}\}/gs, (_m, n, answer, hint, offset: number) => {
-    if (Number(n) !== index) return answer;
-    const inMath = (text.slice(0, offset).replace(/\\\$/g, '').match(/\$/g)?.length ?? 0) % 2 === 1;
-    if (inMath) {
-      return revealed
-        ? `\\textcolor{#e8632a}{${answer}}`
-        : `\\textcolor{#e8632a}{\\underline{\\;\\text{${hint || '?'}}\\;}}`;
-    }
-    return revealed
-      ? `<span class="cloze">${answer}</span>`
-      : `<span class="cloze blank">${hint ? esc(hint) : '…'}</span>`;
-  });
-}
+export { clozeSource } from '../../shared/cloze.ts';

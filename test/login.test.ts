@@ -12,7 +12,7 @@ after(() => { srv.stop(); coded.stop(); });
 
 function client(base: string) {
   const jar = new Map<string, string>();
-  const call = async (p: string, opts: { method?: string; body?: unknown; origin?: string } = {}) => {
+  const call = async (p: string, opts: { method?: string; body?: unknown; origin?: string; headers?: Record<string, string> } = {}) => {
     const res = await fetch(base + p, {
       method: opts.method ?? (opts.body ? 'POST' : 'GET'),
       redirect: 'manual',
@@ -20,6 +20,7 @@ function client(base: string) {
         Cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; '),
         ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
         ...(opts.origin ? { Origin: opts.origin } : {}),
+        ...opts.headers,
       },
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     });
@@ -101,4 +102,14 @@ test('security headers and login rate limiting', async () => {
   for (let i = 0; i < 11; i++) last = (await call('/auth/password', { body: { username: 'jonas', password: `guess ${i}` } })).status;
   assert.equal(last, 429);
   assert.equal((await call('/auth/password', { body: { username: 'jonas', password: 'another long password' } })).status, 429, 'blocked even with the right password');
+});
+
+test('a made-up X-Forwarded-For does not get around the login limit', async () => {
+  const { call } = client(coded.url);
+  let last = 0;
+  // Only the hop added by the trusted proxy counts; whatever the client wrote in front of it is ignored.
+  for (let i = 0; i < 11; i++) {
+    last = (await call('/auth/password', { body: { username: `user${i}`, password: 'wrong password' }, headers: { 'X-Forwarded-For': `203.0.113.${i}, 198.51.100.7` } })).status;
+  }
+  assert.equal(last, 429);
 });

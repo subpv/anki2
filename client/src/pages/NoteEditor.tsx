@@ -418,13 +418,18 @@ export function NoteEditor() {
   const ords = cardOrds(type, d);
   const ord = ords[Math.min(previewOrd, ords.length - 1)];
 
+  const saving = useRef(false);
+  // Leave the editor: go back if there is a page to go back to (not when the editor was opened directly by link).
+  const back = () => ((window.history.state?.idx ?? 0) > 0 ? nav(-1) : nav(courseId ? `/course/${courseId}` : '/'));
   const save = async () => {
+    if (saving.current) return;
+    saving.current = true;
     setError(''); setSaved('');
     const body = { courseId, type, data: d, tags, sourceText, sourceUrl };
     try {
       if (editing) {
         await api(`/api/notes/${id}`, { method: 'PUT', body });
-        nav(-1);
+        back();
       } else {
         await api('/api/notes', { body });
         setDrafts((all) => ({ ...all, [type]: BLANK[type]() }));
@@ -432,6 +437,7 @@ export function NoteEditor() {
         window.scrollTo?.(0, 0);
       }
     } catch (err) { setError((err as Error).message); }
+    saving.current = false;
   };
 
   if (courses && courses.length === 0) {
@@ -489,17 +495,21 @@ export function NoteEditor() {
           </div>
           <div className="sticky-actions">
             <button className="btn primary" onClick={save}>{editing ? t('Save') : t('Add card')} <kbd>Ctrl ↵</kbd></button>
-            {editing ? <button className="btn ghost" onClick={() => nav(-1)}>{t('Cancel')}</button> : <Link className="btn ghost" to={courseId ? `/course/${courseId}` : '/'}>{t('Done')}</Link>}
+            {editing ? <button className="btn ghost" onClick={back}>{t('Cancel')}</button> : <Link className="btn ghost" to={courseId ? `/course/${courseId}` : '/'}>{t('Done')}</Link>}
             {editing && (
               <>
                 <button className="btn ghost" style={{ marginLeft: 'auto' }} onClick={async () => {
-                  await api(`/api/notes/${id}/suspend`, { body: { suspended: !suspended } });
-                  setSuspended(!suspended);
+                  try {
+                    await api(`/api/notes/${id}/suspend`, { body: { suspended: !suspended } });
+                    setSuspended(!suspended);
+                  } catch (err) { setError((err as Error).message); }
                 }}>{suspended ? t('Unsuspend') : t('Suspend')}</button>
                 <button className="btn ghost danger" onClick={async () => {
                   if (!confirmDelete) return setConfirmDelete(true);
-                  await api(`/api/notes/${id}`, { method: 'DELETE' });
-                  nav(-1);
+                  try {
+                    await api(`/api/notes/${id}`, { method: 'DELETE' });
+                    back();
+                  } catch (err) { setError((err as Error).message); }
                 }}>{confirmDelete ? t('Really delete?') : t('Delete')}</button>
               </>
             )}

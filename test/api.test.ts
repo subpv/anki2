@@ -331,3 +331,25 @@ test('optimiser fits parameters from review history', async () => {
   const next = (await api('/api/review/next')).data;
   assert.ok(next.next === null || next.next.intervals[3]);
 });
+
+test('bug fixes: empty numbers, list limits, tag wildcards, suspended siblings', async () => {
+  const c = (await api('/api/courses', { body: { name: 'Fixes' } })).data.id;
+  const num = (value: unknown) => api('/api/notes', { body: { courseId: c, type: 'numeric', data: { question: 'I?', value, unit: 'A', tolerance: 1 } } });
+  for (const v of ['', null, true]) assert.equal((await num(v)).status, 400, JSON.stringify(v));
+  assert.equal((await num('0')).status, 200);
+
+  await api('/api/notes', { body: { courseId: c, type: 'basic', data: { front: 'a', back: 'b' }, tags: 'motor_drive' } });
+  await api('/api/notes', { body: { courseId: c, type: 'basic', data: { front: 'c', back: 'd' }, tags: 'motorXdrive' } });
+  assert.equal((await api(`/api/notes?course=${c}&tag=motor_drive`)).data.length, 1, '_ is not a wildcard');
+  assert.equal((await api(`/api/notes?course=${c}&tag=%25`)).data.length, 0, '% is not a wildcard');
+  const all = await api(`/api/notes?course=${c}&limit=-1`);
+  assert.equal(all.status, 200);
+  assert.equal(all.data.length, 1, 'a negative limit means one row, not all rows');
+
+  const cloze = (await api('/api/notes', { body: { courseId: c, type: 'cloze', data: { text: '{{c1::KCL}}' } } })).data.id;
+  await api(`/api/notes/${cloze}/suspend`, { body: { suspended: true } });
+  await api(`/api/notes/${cloze}`, { method: 'PUT', body: { courseId: c, type: 'cloze', data: { text: '{{c1::KCL}} and {{c2::KVL}}' } } });
+  assert.equal((await api(`/api/notes/${cloze}`)).data.cardCount, 2);
+  const next = (await api(`/api/review/next?course=${c}`)).data;
+  assert.equal(next.counts.new, 3, 'the new card of a suspended note is suspended too (only numeric + 2 basic are new)');
+});

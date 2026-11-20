@@ -22,6 +22,10 @@ const TYPES: Record<string, string> = {
   'image/png': '.png', 'image/jpeg': '.jpg', 'image/gif': '.gif', 'image/webp': '.webp', 'image/avif': '.avif',
 };
 const MAX_BYTES = 10 * 1024 * 1024;
+/** Per import: at most this many different web pictures and this many bytes in total. */
+export const MAX_DOWNLOADS = 50;
+const MAX_TOTAL = 200 * 1024 * 1024;
+const PARALLEL = 4;
 const IMAGE_NAME = /\.(png|jpe?g|gif|webp|avif)$/i;
 const MEDIA_PATH = /^\/media\/[0-9a-f]{8,64}\.(png|jpg|gif|webp|avif)$/;
 
@@ -29,7 +33,7 @@ const MEDIA_PATH = /^\/media\/[0-9a-f]{8,64}\.(png|jpg|gif|webp|avif)$/;
 const blocked = new net.BlockList();
 for (const [a, p] of [['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16], ['172.16.0.0', 12],
   ['192.0.0.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15], ['224.0.0.0', 3]] as const) blocked.addSubnet(a, p, 'ipv4');
-for (const [a, p] of [['::', 128], ['::1', 128], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8], ['64:ff9b::', 96], ['2001:db8::', 32]] as const) {
+for (const [a, p] of [['::', 96], ['::1', 128], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8], ['64:ff9b::', 96], ['2001:db8::', 32]] as const) {
   blocked.addSubnet(a, p, 'ipv6');
 }
 function isBlocked(address: string, family: number): boolean {
@@ -98,43 +102,77 @@ const DIRECT: Record<string, string[]> = { occlusion: ['image'], vocab: ['pictur
 // ![alt](ref) – the ref may contain spaces (file names like "Folie 3.png") and an optional "title".
 const MD_IMAGE = /!\[([^\]]*)\]\(\s*<?([^()<>"]+?)>?(?:\s+"[^"]*")?\s*\)/g;
 
+/** Collect every picture reference of a note: direct fields and ![](…) in its texts. */
+function refsOf(note: Omit<NoteInput, 'courseId'>): string[] {
+  const d = note.data as Record<string, unknown>;
+  const out: string[] = [];
+  for (const field of DIRECT[note.type] ?? []) {
+    const v = String(d[field] ?? '').trim();
+    if (v && !(note.type === 'vocab' && !/^https?:\/\//i.test(v) && !IMAGE_NAME.test(v) && !MEDIA_PATH.test(v))) out.push(v);
+  }
+  const texts = Object.entries(d).filter(([k]) => k !== 'code').flatMap(([, v]) => (Array.isArray(v) ? v : [v]));
+  for (const t of texts) if (typeof t === 'string') for (const m of t.matchAll(MD_IMAGE)) out.push(m[2].trim());
+  return out;
+}
+
 /**
  * Replace every picture reference in the notes by a local /media URL. Problems (unknown file
- * name, failed download) are added per note; the caller imports nothing if there are any.
+ * name, failed download, too many pictures) are added per note; the caller imports nothing if
+ * there are any, and then calls the returned cleanup() to delete pictures downloaded on the way.
  */
-export async function resolveImages(notes: Omit<NoteInput, 'courseId'>[], files: Record<string, string>, problems: ImportProblem[]): Promise<number> {
+export async function resolveImages(notes: Omit<NoteInput, 'courseId'>[], files: Record<string, string>, problems: ImportProblem[]):
+  Promise<{ downloaded: number; cleanup: () => void }> {
   const byName = new Map<string, string>();
   for (const [name, url] of Object.entries(files ?? {})) {
     if (typeof url === 'string' && MEDIA_PATH.test(url)) byName.set(path.basename(name).toLowerCase(), url);
   }
-  const downloads = new Map<string, Promise<string>>();
-  let fetched = 0;
+  const stored: string[] = [];
+  const cleanup = () => { for (const u of stored) fs.rmSync(path.join(MEDIA_DIR, path.basename(u)), { force: true }); };
 
-  const resolveRef = async (ref: string, index: number, type: string): Promise<string | null> => {
+  // Download all web pictures first, a few at a time, within the limits.
+  const links = [...new Set(notes.flatMap(refsOf).filter((r) => /^https?:\/\//i.test(r)))];
+  if (links.length > MAX_DOWNLOADS) {
+    problems.push({ index: -1, type: '', code: 'too-many-images', field: String(MAX_DOWNLOADS) });
+    return { downloaded: 0, cleanup };
+  }
+  const downloaded = new Map<string, string | Error>();
+  let total = 0;
+  const queue = [...links];
+  await Promise.all(Array.from({ length: Math.min(PARALLEL, queue.length) }, async () => {
+    for (let link = queue.shift(); link; link = queue.shift()) {
+      try {
+        const bytes = await download(link);
+        total += bytes.length;
+        if (total > MAX_TOTAL) throw new Error('pictures larger than 200 MB in total');
+        const url = store(bytes, bytes.type!);
+        stored.push(url);
+        downloaded.set(link, url);
+      } catch (err) {
+        downloaded.set(link, err as Error);
+      }
+    }
+  }));
+
+  const resolveRef = (ref: string, index: number, type: string): string | null => {
     const r = ref.trim();
     if (MEDIA_PATH.test(r)) return r;
     if (/^https?:\/\//i.test(r)) {
-      if (!downloads.has(r)) downloads.set(r, download(r).then((b) => { fetched++; return store(b, b.type!); }));
-      try { return await downloads.get(r)!; } catch (err) {
-        problems.push({ index, type, code: 'image-download', field: `${r} (${(err as Error).message})` });
-        return null;
-      }
+      const got = downloaded.get(r);
+      if (typeof got === 'string') return got;
+      problems.push({ index, type, code: 'image-download', field: `${r} (${got?.message ?? 'not downloaded'})` });
+      return null;
     }
     const local = byName.get(path.basename(r).toLowerCase());
     if (local) return local;
     problems.push({ index, type, code: 'image-missing', field: r });
     return null;
   };
-
-  const replaceMarkdown = async (text: string, index: number, type: string): Promise<string> => {
-    const refs = [...text.matchAll(MD_IMAGE)];
-    let out = text;
-    for (const m of refs) {
-      const url = await resolveRef(m[2], index, type);
-      if (url) out = out.replace(m[0], `![${m[1]}](${url})`);
-    }
-    return out;
-  };
+  // A replacer function, so "$&" or "$1" in alt text is not treated as a replacement pattern.
+  const replaceMarkdown = (text: string, index: number, type: string): string =>
+    text.replace(MD_IMAGE, (whole, alt: string, ref: string) => {
+      const url = resolveRef(ref, index, type);
+      return url ? `![${alt}](${url})` : whole;
+    });
 
   for (const [i, note] of notes.entries()) {
     const index = i + 1;
@@ -143,16 +181,14 @@ export async function resolveImages(notes: Omit<NoteInput, 'courseId'>[], files:
       const v = String(d[field] ?? '').trim();
       // A vocab picture can also be an emoji: only treat links and file names as images.
       if (!v || (note.type === 'vocab' && !/^https?:\/\//i.test(v) && !IMAGE_NAME.test(v) && !MEDIA_PATH.test(v))) continue;
-      const url = await resolveRef(v, index, note.type);
+      const url = resolveRef(v, index, note.type);
       if (url) d[field] = url;
     }
     for (const [key, value] of Object.entries(d)) {
       if (key === 'code') continue;
-      if (typeof value === 'string' && value.includes('![')) d[key] = await replaceMarkdown(value, index, note.type);
-      if (Array.isArray(value)) {
-        d[key] = await Promise.all(value.map((v) => (typeof v === 'string' && v.includes('![') ? replaceMarkdown(v, index, note.type) : v)));
-      }
+      if (typeof value === 'string' && value.includes('![')) d[key] = replaceMarkdown(value, index, note.type);
+      if (Array.isArray(value)) d[key] = value.map((v) => (typeof v === 'string' && v.includes('![') ? replaceMarkdown(v, index, note.type) : v));
     }
   }
-  return fetched;
+  return { downloaded: stored.length, cleanup };
 }

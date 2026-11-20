@@ -25,7 +25,8 @@ function readings(unit: string): { base: string; factor: number }[] {
 }
 
 export function parseQuantity(input: string): { value: number; unit: string } | null {
-  const m = input.trim().match(/^([+-]?(?:\d+[.,]?\d*|[.,]\d+)(?:\s*(?:[eE]|[x×·*]\s*10\^?)\s*[+-]?\d+)?)\s*(.*)$/);
+  // Unicode minus (−) and en dash, as pasted from PDFs or typed on phones, count as a minus sign.
+  const m = input.trim().replace(/[\u2212\u2013]/g, '-').match(/^([+-]?(?:\d+[.,]?\d*|[.,]\d+)(?:\s*(?:[eE]|[x×·*]\s*10\^?)\s*[+-]?\d+)?)\s*(.*)$/);
   if (!m) return null;
   const num = m[1].replace(',', '.').replace(/\s*(?:[x×·*]\s*10\^?)\s*/, 'e').replace(/\s+/g, '');
   const value = Number(num);

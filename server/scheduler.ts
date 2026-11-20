@@ -1,4 +1,4 @@
-import { default_w, forgetting_curve, fsrs, generatorParameters, State, type Card, type Grade, type FSRS, type StepUnit } from 'ts-fsrs';
+import { default_w, forgetting_curve, fsrs, GenSeedStrategyWithCardId, generatorParameters, State, StrategyMode, type Card, type Grade, type FSRS, type StepUnit } from 'ts-fsrs';
 import type { Settings } from '../shared/types.ts';
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -41,11 +41,14 @@ export function makeScheduler(settings: Settings, w?: number[] | null): FSRS {
     learning_steps: steps(settings.learningSteps),
     relearning_steps: steps(settings.relearningSteps),
     ...(w?.length ? { w } : {}),
-  }));
+  // Fuzz seeded by card id and repetitions (not the time), so the interval shown under a button
+  // is exactly the one applied when it is pressed a few seconds later.
+  })).useStrategy(StrategyMode.SEED, GenSeedStrategyWithCardId('card_id'));
 }
 
-export function toFsrsCard(r: CardRow): Card {
+export function toFsrsCard(r: CardRow): Card & { card_id: number } {
   return {
+    card_id: r.id,
     due: new Date(r.due), stability: r.stability, difficulty: r.difficulty,
     elapsed_days: r.elapsed_days, scheduled_days: r.scheduled_days, learning_steps: r.learning_steps,
     reps: r.reps, lapses: r.lapses, state: r.state as State,

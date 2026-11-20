@@ -1,13 +1,17 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
 import { client, startServer, type Server } from './helpers.ts';
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 let normal: Server;
 let lenient: Server;
+let hits = 0;
 const pics = http.createServer((req, res) => {
-  if (req.url === '/dog.png') { res.setHeader('Content-Type', 'image/png'); return res.end(PNG); }
+  hits++;
+  if (req.url?.startsWith('/dog.png')) { res.setHeader('Content-Type', 'image/png'); return res.end(PNG); }
   if (req.url === '/page.html') { res.setHeader('Content-Type', 'text/html'); return res.end('<p>hi</p>'); }
   if (req.url === '/hop') { res.statusCode = 302; res.setHeader('Location', '/dog.png'); return res.end(); }
   res.statusCode = 404; res.end();
@@ -70,4 +74,44 @@ test('web pictures are downloaded and stored locally; non-images are refused', a
   const html = await api('/api/import/text', { body: { text: occlusion('http://127.0.0.1:18095/page.html'), newCourse: 'Web' } });
   assert.equal(html.status, 400);
   assert.match(html.data.problems[0].field, /not an image/);
+});
+
+test('at most 50 web pictures per import, and nothing is downloaded above that', async () => {
+  const api = client(lenient.url);
+  const notes = Array.from({ length: 51 }, (_, i) => ({ type: 'basic', front: `![](http://127.0.0.1:18095/dog.png?${i})`, back: 'x' }));
+  hits = 0;
+  const r = await api('/api/import/text', { body: { text: JSON.stringify(notes), newCourse: 'Many' } });
+  assert.equal(r.status, 400);
+  assert.deepEqual(r.data.problems.map((p: any) => p.code), ['too-many-images']);
+  assert.equal(hits, 0);
+  assert.equal((await api('/api/courses')).data.some((c: any) => c.name === 'Many'), false, 'no course is left behind');
+});
+
+test('a failing import does not leave downloaded pictures behind', async () => {
+  const api = client(lenient.url);
+  const before = (await api('/api/courses')).data.length;
+  const media = () => fs.readdirSync(path.join(lenient.dataDir, 'media')).length;
+  const files = media();
+  hits = 0;
+  const r = await api('/api/import/text', { body: { text: JSON.stringify([
+    { type: 'basic', front: '![](http://127.0.0.1:18095/dog.png?keep)', back: 'x' },
+    { type: 'basic', front: '![](missing-file.png)', back: 'y' },
+  ]), newCourse: 'Half' } });
+  assert.equal(r.status, 400);
+  assert.equal((await api('/api/courses')).data.length, before);
+  assert.ok(hits > 0, 'the web picture was downloaded');
+  assert.equal(media(), files, 'the downloaded picture was removed again');
+});
+
+test('repeated ids in boxes and rearrangements are fine', async () => {
+  const api = client(normal.url);
+  const form = new FormData();
+  form.append('file', new Blob([PNG], { type: 'image/png' }), 'g.png');
+  const { url } = (await api('/api/media', { form })).data;
+  const text = JSON.stringify([
+    { type: 'occlusion', image: url, rects: [{ id: 'a', x: 0.1, y: 0.1, w: 0.2, h: 0.2, label: 'A' }, { id: 'a', x: 0.5, y: 0.5, w: 0.2, h: 0.2, label: 'B' }] },
+    { type: 'formula', name: 'Ohm', latex: 'U=RI', rearrangements: [{ id: 'r', solveFor: 'I', latex: 'I=U/R' }, { id: 'r', solveFor: 'R', latex: 'R=U/I' }] },
+  ]);
+  const r = await api('/api/import/text', { body: { text, newCourse: 'Ids' } });
+  assert.equal(r.status, 200, JSON.stringify(r.data));
 });

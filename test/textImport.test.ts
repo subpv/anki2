@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import { parseNotesJson, repairLatexBackslashes } from '../server/textImport.ts';
 
 test('repairs single LaTeX backslashes but keeps real escapes', () => {
-  const raw = String.raw`{"a":"$\frac{1}{2}\rho v^2$ and \alpha, \nabla, \theta, \times","b":"line1\nline2\tTab \"q\" \\sqrt{x} é"}`;
+  const raw = String.raw`{"a":"$\frac{1}{2}\rho v^2$ and $\nabla \theta \times$, \alpha","b":"line1\nline2\tTab \"q\" \\sqrt{x} é","c":"$$\beta \nu$$ menu\nu. ok"}`;
   const { text, repaired } = repairLatexBackslashes(raw);
   const v = JSON.parse(text);
-  assert.equal(v.a, String.raw`$\frac{1}{2}\rho v^2$ and \alpha, \nabla, \theta, \times`);
+  assert.equal(v.a, String.raw`$\frac{1}{2}\rho v^2$ and $\nabla \theta \times$, \alpha`);
   assert.equal(v.b, 'line1\nline2\tTab "q" \\sqrt{x} é');
-  assert.equal(repaired, 6);
+  // Inside $$…$$ LaTeX is repaired; outside math "\n" stays a line break, even before a LaTeX-like word.
+  assert.equal(v.c, '$$\\beta \\nu$$ menu\nu. ok');
+  assert.equal(repaired, 8);
   // Already correct JSON is left alone.
   const good = JSON.stringify({ a: String.raw`\frac{a}{b} \rho` });
   assert.equal(repairLatexBackslashes(good).text, good);

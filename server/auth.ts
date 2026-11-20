@@ -53,13 +53,16 @@ async function verifyPassword(password: string, stored: string | null): Promise<
 
 export const USERNAME_RE = /^[a-zA-Z0-9._@-]{3,64}$/;
 
-/** At most 10 failed logins per username and per address within 15 minutes. */
+/**
+ * Failed logins within 15 minutes: at most 10 per address, and 30 per username (higher, so a
+ * stranger cannot easily lock someone out, but a distributed guesser is still slowed down).
+ */
 const failures = new Map<string, { count: number; until: number }>();
-const LIMIT = 10;
 const WINDOW = 15 * 60_000;
+const limitFor = (key: string) => (key.startsWith('user:') ? 30 : 10);
 function blocked(keys: string[]): boolean {
   const now = Date.now();
-  return keys.some((k) => { const f = failures.get(k); return !!f && f.until > now && f.count >= LIMIT; });
+  return keys.some((k) => { const f = failures.get(k); return !!f && f.until > now && f.count >= limitFor(k); });
 }
 function recordFailure(keys: string[]) {
   const now = Date.now();
@@ -134,7 +137,9 @@ function oidcConfig(): Promise<oidc.Configuration> {
 const hasUsers = () => !!db.prepare('SELECT 1 FROM users LIMIT 1').get();
 
 export function registerAuth(app: FastifyInstance) {
-  db.prepare('DELETE FROM sessions WHERE expires < ?').run(Date.now());
+  const purge = () => db.prepare('DELETE FROM sessions WHERE expires < ?').run(Date.now());
+  purge();
+  setInterval(purge, 6 * 3_600_000).unref(); // expired sessions are removed every 6 hours
 
   // Requests that change something must come from this app's own pages (defence against
   // cross-site request forgery, also from other sites on the same parent domain).
@@ -189,9 +194,10 @@ export function registerAuth(app: FastifyInstance) {
     const lang = language === 'en' ? 'en' : 'de';
     const hash = await hashPassword(String(password));
     const id = db.transaction(() => {
-      if (db.prepare('SELECT 1 FROM users WHERE username = ? COLLATE NOCASE OR sub = ?').get(name, `local:${name}`)) return null;
+      if (db.prepare('SELECT 1 FROM users WHERE username = ? COLLATE NOCASE').get(name)) return null;
+      // A random subject, so a username freed by renaming can be registered again.
       return Number(db.prepare('INSERT INTO users (sub, name, email, username, password_hash, settings) VALUES (?, ?, ?, ?, ?, ?)')
-        .run(`local:${name}`, String(username).trim(), '', name, hash, JSON.stringify({ language: lang })).lastInsertRowid);
+        .run(`local:${crypto.randomUUID()}`, String(username).trim(), '', name, hash, JSON.stringify({ language: lang })).lastInsertRowid);
     }).immediate();
     if (id === null) return reply.code(409).send({ error: 'This username is taken' });
     recordSignup(keys[0]);
